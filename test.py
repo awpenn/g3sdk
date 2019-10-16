@@ -6,24 +6,32 @@ import json
 from requests.auth import AuthBase
 import requests
 
-Gen3Submission = submission.Gen3Submission
-endpoint = "https://gen3test.lisanwanglab.org"
-auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
+from settings import TOKEN, APIURL, CTYPE, ACCEPT
 
-sub = Gen3Submission(endpoint, auth)
+headers = {"Authorization": "Bearer {token}".format(token=TOKEN)}
+# testing requests on gnews open API
+# r = requests.get('https://gnews.io/api/v3/search?q=wisconsin&token={key}'.format(key=TOKEN))
+# returned = r.json()
+# for i in returned["articles"]:
+#     print(i["description"])
+# Gen3Submission = submission.Gen3Submission
+# endpoint = "https://gen3test.lisanwanglab.org"
+# auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 
-test = {
-  "type": "program",
-  "dbgap_accession_number": "test",
-  "name": "test",
-  "release_name": "test"
-}
+# sub = Gen3Submission(endpoint, auth)
 
-sub.create_program(test)
-query = '{program(name:"test"){id}}'
-print(sub.query(query))
-delete = input("delete same record?")
-if delete == "y":
-  sub.delete_program("test")
+# test = {
+#   "type": "program",
+#   "dbgap_accession_number": "test",
+#   "name": "test",
+#   "release_name": "test"
+# }
+
+# sub.create_program(test)
+# query = '{program(name:"test"){id}}'
+# print(sub.query(query))
+# delete = input("delete same record?")
+# if delete == "y":
+#   sub.delete_program("test")
 
 
