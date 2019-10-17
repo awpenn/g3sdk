@@ -26,7 +26,7 @@ Gen3Submission = submission.Gen3Submission
 endpoint = "https://gen3test.lisanwanglab.org"
 auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 
-sub = Gen3Submission(endpoint, auth)
+submitter = Gen3Submission(endpoint, auth)
 # how to add to base string
 # APIURL+"/1/subjects 
 
@@ -35,20 +35,28 @@ response = requests.get(APIURL+urltail, headers=headers)
 # response.json() produces a dictionary
 data = response.json()
 for dataset in data['data']:
-    project_release_name = dataset["name"]
-    project_dbgap = dataset["accession"]
-    project_name = dataset["accession"]
-    project_description = dataset["description"]
+    program_release_name = dataset["name"]
+    program_dbgap = dataset["accession"]
+    program_name = dataset["accession"]
+    program_description = dataset["description"]
+    dss_dataset_id = dataset["id"]
         
     program_obj = {
         "type": "program",
-        "dbgap_accession_number": project_dbgap,
-        "name": project_name,
-        "release_name": project_release_name,
-        "summary_description": project_description
+        "dbgap_accession_number": program_dbgap,
+        "name": program_name,
+        "release_name": program_release_name,
+        "summary_description": program_description
     }
+    # create programs from dataset list
+    submitter.create_program(program_obj)
+    # get guid for program based on program_name, store as fetched_id to link subjects, filesets, core_metadata_collections
+    query = '{program(name:\"%s\"){id}}' % program_name
+    print(query)
+    fetched_program_id = submitter.query(query)
+    print(fetched_program_id)
 
-    sub.create_program(program_obj)  
+    
 
 #for working with so dont call API a million times
 # with open("datasets.json", "w") as outfile:
