@@ -2,3 +2,4 @@
 .env
 credentials.json
 datasets.json
+settings.pyc
