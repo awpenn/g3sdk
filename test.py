@@ -52,10 +52,11 @@ for dataset in data['data']:
     submitter.create_program(program_obj)
     # get guid for program based on program_name, store as fetched_id to link subjects, filesets, core_metadata_collections
     query = '{program(name:\"%s\"){id}}' % program_name
-    print(query)
-    fetched_program_id = submitter.query(query)
-    print(fetched_program_id)
 
+    fetched_program_id = submitter.query(query)["data"]["program"][0]["id"]
+
+    # get a list of consents for the dataset
+    
     
 
 #for working with so dont call API a million times

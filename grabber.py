@@ -30,25 +30,17 @@ submitter = Gen3Submission(endpoint, auth)
 # how to add to base string
 # APIURL+"/1/subjects 
 
+# write an api response to a .json file and then test off that so not hitting the API over and over
 
 # response = requests.get(APIURL+urltail, headers=headers)
-# # response.json() produces a dictionary
-# for working with so dont call API a million times
-# with open("datasets.json", "w") as outfile:
-#     json.dump(response.json(), outfile)
+# response.json() produces a dictionary
 
+query = "{program(name:\"NG00067\"){id}}"
 
-with open('jsondumps/fetched_program_id.json') as json_file:
-    data = json.load(json_file)
-    print(data["data"]["program"][0]["id"])
+response = submitter.query(query)
 
+#set dump file name
+dumpfile_name = ''
 
-
-# submitter.create_program(test)
-# query = '{program(name:"test"){id}}'
-# print(sub.query(query))
-# delete = input("delete same record?")
-# if delete == "y":
-#   sub.delete_program("test")
-
-
+with open("jsondumps/%s.json" % dumpfile_name, "a") as outfile:
+    json.dump(response, outfile)

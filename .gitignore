@@ -1,5 +1,5 @@
 .venv
 .env
+jsondumps/
 credentials.json
-datasets.json
 settings.pyc
