@@ -32,15 +32,16 @@ submitter = Gen3Submission(endpoint, auth)
 
 # write an api response to a .json file and then test off that so not hitting the API over and over
 
-# response = requests.get(APIURL+urltail, headers=headers)
+response = requests.get(APIURL+urltail+"/1/consents.key", headers=headers)
 # response.json() produces a dictionary
+print(response.json())
+# query = "{program(name:\"NG00067\"){id}}"
 
-query = "{program(name:\"NG00067\"){id}}"
-
-response = submitter.query(query)
+# response = submitter.query(query)
 
 #set dump file name
 dumpfile_name = ''
 
 with open("jsondumps/%s.json" % dumpfile_name, "a") as outfile:
-    json.dump(response, outfile)
+    # below, data from DSS api requires response.json() , from datastage = response
+    json.dump(response.json(), outfile)

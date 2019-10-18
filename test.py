@@ -28,7 +28,7 @@ auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 
 submitter = Gen3Submission(endpoint, auth)
 # how to add to base string
-# APIURL+"/1/subjects 
+# APIURL+urltail"/1/subjects 
 
 
 response = requests.get(APIURL+urltail, headers=headers)
@@ -40,6 +40,7 @@ for dataset in data['data']:
     program_name = dataset["accession"]
     program_description = dataset["description"]
     dss_dataset_id = dataset["id"]
+    dataset_consents = []
         
     program_obj = {
         "type": "program",
@@ -56,7 +57,26 @@ for dataset in data['data']:
     fetched_program_id = submitter.query(query)["data"]["program"][0]["id"]
 
     # get a list of consents for the dataset
+    print(dss_dataset_id)
+    response = requests.get(APIURL+urltail+"/"+str(dss_dataset_id)+"/consents", headers=headers)
+    data = response.json()["data"]
+    for consent in data:
+        dataset_consents.append(consent["key"])
     
+    # create project for each consent in dataset_consents list
+    for c in dataset_consents:
+        project_obj = {
+            "type": "project",
+            "dbgap_accession_number": program_name+"_"+c,
+            "name": program_name+"_"+c,
+            "code": program_name+"_"+c,
+            "availability_type": "Restricted"
+        }
+
+        submitter.create_project(program_name, project_obj)
+
+        # create CMC for each created project
+
     
 
 #for working with so dont call API a million times

@@ -37,18 +37,32 @@ submitter = Gen3Submission(endpoint, auth)
 # with open("datasets.json", "w") as outfile:
 #     json.dump(response.json(), outfile)
 
+## unpacking program_ids
+# with open('jsondumps/fetched_program_id.json') as json_file:
+#    data = json.load(json_file)
+#    print(data["data"]["program"][0]["id"])
 
-with open('jsondumps/fetched_program_id.json') as json_file:
-    data = json.load(json_file)
-    print(data["data"]["program"][0]["id"])
+## getting consents, as list?
+dataset_consents = []
+with open('jsondumps/consents.json') as json_file:
+    data = json.load(json_file)["data"]
+    for consent in data:
+        dataset_consents.append(consent["key"])
 
+for c in dataset_consents:
+    project_obj = {
+        "type": "project",
+        "dbgap_accession_number": program_name+"_"+c,
+        "name": program_name+"_"+c,
+        "code": program_name+"_"+c,
+        "availability_type": "Restricted",
+        "programs": [
+            {
+                "id": fetched_program_id
+            }
+        ]
+    }
 
-
-# submitter.create_program(test)
-# query = '{program(name:"test"){id}}'
-# print(sub.query(query))
-# delete = input("delete same record?")
-# if delete == "y":
-#   sub.delete_program("test")
+    submitter.create_project(project_obj)
 
 
