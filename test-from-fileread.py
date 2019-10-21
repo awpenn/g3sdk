@@ -43,26 +43,55 @@ submitter = Gen3Submission(endpoint, auth)
 #    print(data["data"]["program"][0]["id"])
 
 ## getting consents, as list?
+# dataset_consents = []
+# with open('jsondumps/consents.json') as json_file:
+#     data = json.load(json_file)["data"]
+#     for consent in data:
+#         dataset_consents.append(consent["key"])
+
+# for c in dataset_consents:
+#     project_obj = {
+#         "type": "project",
+#         "dbgap_accession_number": program_name+"_"+c,
+#         "name": program_name+"_"+c,
+#         "code": program_name+"_"+c,
+#         "availability_type": "Restricted",
+#         "programs": [
+#             {
+#                 "id": fetched_program_id
+#             }
+#         ]
+#     }
+
+#     submitter.create_project(project_obj)
+
+
+## making CMCs
 dataset_consents = []
+program_name = 'NG00067'
+
 with open('jsondumps/consents.json') as json_file:
     data = json.load(json_file)["data"]
     for consent in data:
         dataset_consents.append(consent["key"])
 
 for c in dataset_consents:
-    project_obj = {
-        "type": "project",
-        "dbgap_accession_number": program_name+"_"+c,
-        "name": program_name+"_"+c,
-        "code": program_name+"_"+c,
-        "availability_type": "Restricted",
-        "programs": [
-            {
-                "id": fetched_program_id
-            }
-        ]
+    project_name = program_name+"_"+c
+    query = '{project(name:\"%s\"){id}}' % project_name
+    fetched_project_id = submitter.query(query)["data"]["project"][0]["id"]
+    print(fetched_project_id)
+
+    cmc_obj = {
+        "*collection_type": "Consent-Level File Manifest", 
+        "description": "Core Metadata Collection for "+program_name+"_"+c, 
+        "type": "core_metadata_collection", 
+        "submitter_id": program_name+"_"+c+"_"+"core_metadata_collection",
+        "projects": {
+            "id": fetched_project_id
+        }
     }
 
-    submitter.create_project(project_obj)
+    print(cmc_obj)
 
+    submitter.submit_record(program_name, project_name, cmc_obj)
 

@@ -56,11 +56,18 @@ for dataset in data['data']:
 
     fetched_program_id = submitter.query(query)["data"]["program"][0]["id"]
 
+
+    # get subjects/samples by querying sampleSets of a dataset with dss_dataset_id
+    response = requests.get(APIURL+urltail+"/"+str(dss_dataset_id)+"/sampleSets", headers=headers)
+    subject_data = response.json()["data"]
+    
+
+
+
     # get a list of consents for the dataset
-    print(dss_dataset_id)
     response = requests.get(APIURL+urltail+"/"+str(dss_dataset_id)+"/consents", headers=headers)
-    data = response.json()["data"]
-    for consent in data:
+    consent_data = response.json()["data"]
+    for consent in consent_data:
         dataset_consents.append(consent["key"])
     
     # create project for each consent in dataset_consents list
@@ -76,40 +83,27 @@ for dataset in data['data']:
         submitter.create_project(program_name, project_obj)
 
         # create CMC for each created project
+    # for c in dataset_consents:
+        project_name = program_name+"_"+c
+        query = '{project(name:\"%s\"){id}}' % project_name
+        fetched_project_id = submitter.query(query)["data"]["project"][0]["id"]
+        print(fetched_project_id)
 
+        cmc_obj = {
+            "*collection_type": "Consent-Level File Manifest", 
+            "description": "Core Metadata Collection for "+program_name+"_"+c, 
+            "type": "core_metadata_collection", 
+            "submitter_id": program_name+"_"+c+"_"+"core_metadata_collection",
+            "projects": {
+                "id": fetched_project_id
+            }
+        }
+
+        print(cmc_obj)
+
+        submitter.submit_record(program_name, project_name, cmc_obj)
     
 
-#for working with so dont call API a million times
-# with open("datasets.json", "w") as outfile:
-#     json.dump(response.json(), outfile)
 
-
-# with open('datasets.json') as json_file:
-#     data = json.load(json_file)
-#     for dataset in data['data']:
-
-#         project_release_name = dataset["name"]
-#         project_dbgap = dataset["accession"]
-#         project_name = dataset["accession"]
-#         project_description = dataset["description"]
-        
-#         program_obj = {
-#             "type": "program",
-#             "dbgap_accession_number": project_dbgap,
-#             "name": project_name,
-#             "release_name": project_release_name,
-#             "summary_description": project_description
-#         }
-
-#         sub.create_program(program_obj)
-
-
-
-# sub.create_program(test)
-# query = '{program(name:"test"){id}}'
-# print(sub.query(query))
-# delete = input("delete same record?")
-# if delete == "y":
-#   sub.delete_program("test")
 
 
