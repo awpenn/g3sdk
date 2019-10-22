@@ -49,12 +49,16 @@ dumpfile_name = 'sample_subjects'
 response = requests.get(APIURL+urltail+"/1/sampleSets", headers=headers)
 
 response_data = response.json()["data"]
-
+super_dict = {}
 for sample_set in response_data:
     urltail = "sampleSets"
     request_string = APIURL+urltail+"/"+str(sample_set["id"])+"/samples?includes=subject"
-    response = requests.get(APIURL+urltail+"/"+str(sample_set["id"])+"/samples?includes=subject", headers=headers)
+    response = requests.get(APIURL+urltail+"/"+str(sample_set["id"])+"/samples?includes=subject.fullConsent", headers=headers)
 
-    with open("jsondumps/%s.json" % dumpfile_name, "a") as outfile:
+    # merges three dictionaries returned into one
+    for k, v in response.json().iteritems():
+        super_dict.setdefault(k,[]).append(v)
+
+with open("jsondumps/%s.json" % dumpfile_name, "a") as outfile:
     # below, data from DSS api requires response.json() , from datastage = response
-        json.dump(response.json(), outfile)
+    json.dump(super_dict, outfile)

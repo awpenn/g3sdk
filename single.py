@@ -40,15 +40,14 @@ submitter = Gen3Submission(endpoint, auth)
 
 # submitter.submit_record("NG00067", "NG00067_DS-ADRD-IRB-PUB-NPU", subject)
 
-# this did not work for submitting a cmc
-cmc_obj = {
-        "collection_type": "Consent-Level File Manifest", 
-        "description": "Core Metadata Collection", 
-        "type": "core_metadata_collection", 
-        "submitter_id": "wowowoww",
-        "projects": {
-            "id": "de6a8e65-c574-5087-aa7a-6cc68d57310b"
-        }
-    }   
+# cmc_obj = {
+#         "collection_type": "Consent-Level File Manifest", 
+#         "description": "Core Metadata Collection", 
+#         "type": "core_metadata_collection", 
+#         "submitter_id": "wowowoww",
+#         "projects": {
+#             "id": "de6a8e65-c574-5087-aa7a-6cc68d57310b"
+#         }
+#     }   
 
-submitter.submit_record("NG00067", "NG00067_DS-ADRD-IRB-PUB-NPU", cmc_obj)
+# submitter.submit_record("NG00067", "NG00067_DS-ADRD-IRB-PUB-NPU", cmc_obj)

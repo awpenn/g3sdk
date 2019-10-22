@@ -66,9 +66,9 @@ submitter = Gen3Submission(endpoint, auth)
 #     submitter.create_project(project_obj)
 
 
-## making CMCs
+# ## making CMCs
 dataset_consents = []
-program_name = 'NG00067'
+# program_name = 'NG00067'
 
 with open('jsondumps/consents.json') as json_file:
     data = json.load(json_file)["data"]
@@ -76,22 +76,73 @@ with open('jsondumps/consents.json') as json_file:
         dataset_consents.append(consent["key"])
 
 for c in dataset_consents:
-    project_name = program_name+"_"+c
+    project_name = "NG00067"+"_"+c
     query = '{project(name:\"%s\"){id}}' % project_name
     fetched_project_id = submitter.query(query)["data"]["project"][0]["id"]
-    print(fetched_project_id)
+    print("fedged pid: " + fetched_project_id)
+#     project_name = program_name+"_"+c
+#     query = '{project(name:\"%s\"){id}}' % project_name
+#     fetched_project_id = submitter.query(query)["data"]["project"][0]["id"]
+#     print(fetched_project_id)
 
-    cmc_obj = {
-        "*collection_type": "Consent-Level File Manifest", 
-        "description": "Core Metadata Collection for "+program_name+"_"+c, 
-        "type": "core_metadata_collection", 
-        "submitter_id": program_name+"_"+c+"_"+"core_metadata_collection",
-        "projects": {
-            "id": fetched_project_id
-        }
-    }
+#     cmc_obj = {
+#         "*collection_type": "Consent-Level File Manifest", 
+#         "description": "Core Metadata Collection for "+program_name+"_"+c, 
+#         "type": "core_metadata_collection", 
+#         "submitter_id": program_name+"_"+c+"_"+"core_metadata_collection",
+#         "projects": {
+#             "id": fetched_project_id
+#         }
+#     }
 
-    print(cmc_obj)
+#     print(cmc_obj)
 
-    submitter.submit_record(program_name, project_name, cmc_obj)
 
+## building sample/subject dictionary
+#     project_sample_set = set({})
+
+#     with open("jsondumps/samples-from-dataset1.json", "r") as json_file:
+#         data = json.load(json_file)
+
+#         for key, sample in data.iteritems():
+#             print(sample["subject"]["consent"]["key"])
+#             project_sample_set.add(sample["subject"]["key"])
+
+#     submitter.submit_record(program_name, project_name, cmc_obj)
+
+## building sample/subject dictionary
+    project_sample_set = set({})
+
+    with open("jsondumps/samples-from-dataset1.json", "r") as json_file:
+        data = json.load(json_file)
+        for key, sample in data.iteritems():
+            ## some subjects have 'null' consent, ignoring for now
+            if sample["subject"]["consent"] is not None:
+                ## if the subject's consent matches the current project, add to the pss set
+                if sample["subject"]["consent"]["key"] == c:
+                    project_sample_set.add( sample["subject"]["key"] )
+        
+        if len(project_sample_set) > 0:
+            # print(c+ ": "+str(len(project_sample_set)))
+
+            for dictkey, value in enumerate(project_sample_set):
+                for samplekey, sample in data.iteritems():
+                    if sample["subject"]["key"] == value:
+
+                        subject = sample["subject"]
+                        subject_obj = {
+                            "cohort": subject["cohort_key"], 
+                            "projects": {
+                                "id": fetched_project_id
+                            }, 
+                            "consent": subject["consent"]["key"], 
+                            "type": "subject", 
+                            "submitter_id": subject["key"]
+                        }
+                        print(subject_obj)
+                        submitter.submit_record("NG00067", project_name, subject_obj)
+
+
+
+# for key, value in enumerate(project_sample_set):
+    # print(value)
