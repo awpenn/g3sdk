@@ -43,13 +43,14 @@ submitter = Gen3Submission(endpoint, auth)
 #    print(data["data"]["program"][0]["id"])
 
 ## getting consents, as list?
-# dataset_consents = []
-# with open('jsondumps/consents.json') as json_file:
-#     data = json.load(json_file)["data"]
-#     for consent in data:
-#         dataset_consents.append(consent["key"])
+dataset_consents = []
+with open('jsondumps/consents.json') as json_file:
+    data = json.load(json_file)["data"]
+    for consent in data:
+        dataset_consents.append(consent["key"])
 
-# for c in dataset_consents:
+    for c in dataset_consents:
+        project_name = "NG00067"+"_"+c
 #     project_obj = {
 #         "type": "project",
 #         "dbgap_accession_number": program_name+"_"+c,
@@ -66,20 +67,20 @@ submitter = Gen3Submission(endpoint, auth)
 #     submitter.create_project(project_obj)
 
 
-# ## making CMCs
-dataset_consents = []
-# program_name = 'NG00067'
+# # ## making CMCs
+# dataset_consents = []
+# # program_name = 'NG00067'
 
-with open('jsondumps/consents.json') as json_file:
-    data = json.load(json_file)["data"]
-    for consent in data:
-        dataset_consents.append(consent["key"])
+# with open('jsondumps/consents.json') as json_file:
+#     data = json.load(json_file)["data"]
+#     for consent in data:
+#         dataset_consents.append(consent["key"])
 
-for c in dataset_consents:
-    project_name = "NG00067"+"_"+c
-    query = '{project(name:\"%s\"){id}}' % project_name
-    fetched_project_id = submitter.query(query)["data"]["project"][0]["id"]
-    print("fedged pid: " + fetched_project_id)
+# for c in dataset_consents:
+#     project_name = "NG00067"+"_"+c
+#     query = '{project(name:\"%s\"){id}}' % project_name
+#     fetched_project_id = submitter.query(query)["data"]["project"][0]["id"]
+#     print("fedged pid: " + fetched_project_id)
 #     project_name = program_name+"_"+c
 #     query = '{project(name:\"%s\"){id}}' % project_name
 #     fetched_project_id = submitter.query(query)["data"]["project"][0]["id"]
@@ -110,39 +111,59 @@ for c in dataset_consents:
 
 #     submitter.submit_record(program_name, project_name, cmc_obj)
 
-## building sample/subject dictionary
-    project_sample_set = set({})
+# ## building sample/subject dictionary
+#     project_sample_set = set({})
 
-    with open("jsondumps/samples-from-dataset1.json", "r") as json_file:
-        data = json.load(json_file)
-        for key, sample in data.iteritems():
-            ## some subjects have 'null' consent, ignoring for now
-            if sample["subject"]["consent"] is not None:
-                ## if the subject's consent matches the current project, add to the pss set
-                if sample["subject"]["consent"]["key"] == c:
-                    project_sample_set.add( sample["subject"]["key"] )
+#     with open("jsondumps/samples-from-dataset1.json", "r") as json_file:
+#         data = json.load(json_file)
+#         for key, sample in data.iteritems():
+#             ## some subjects have 'null' consent, ignoring for now
+#             if sample["subject"]["consent"] is not None:
+#                 ## if the subject's consent matches the current project, add to the pss set
+#                 if sample["subject"]["consent"]["key"] == c:
+#                     project_sample_set.add( sample["subject"]["key"] )
         
-        if len(project_sample_set) > 0:
-            # print(c+ ": "+str(len(project_sample_set)))
+#         if len(project_sample_set) > 0:
+#             # print(c+ ": "+str(len(project_sample_set)))
 
-            for dictkey, value in enumerate(project_sample_set):
-                for samplekey, sample in data.iteritems():
-                    if sample["subject"]["key"] == value:
+#             for dictkey, value in enumerate(project_sample_set):
+#                 for samplekey, sample in data.iteritems():
+#                     if sample["subject"]["key"] == value:
 
-                        subject = sample["subject"]
-                        subject_obj = {
-                            "cohort": subject["cohort_key"], 
-                            "projects": {
-                                "id": fetched_project_id
-                            }, 
-                            "consent": subject["consent"]["key"], 
-                            "type": "subject", 
-                            "submitter_id": subject["key"]
-                        }
-                        print(subject_obj)
-                        submitter.submit_record("NG00067", project_name, subject_obj)
+#                         subject = sample["subject"]
+#                         subject_obj = {
+#                             "cohort": subject["cohort_key"], 
+#                             "projects": {
+#                                 "id": fetched_project_id
+#                             }, 
+#                             "consent": subject["consent"]["key"], 
+#                             "type": "subject", 
+#                             "submitter_id": subject["key"]
+#                         }
+#                         print(subject_obj)
+#                         submitter.submit_record("NG00067", project_name, subject_obj)
 
 
 
 # for key, value in enumerate(project_sample_set):
     # print(value)
+
+## creating sample records
+        with open("jsondumps/samples-from-dataset1.json", "r") as json_file:
+            data = json.load(json_file)
+            for key, sample in data.iteritems():
+                ## some subjects have 'null' consent, ignoring for now
+                if sample["subject"]["consent"] is not None:
+                    if sample["subject"]["consent"]["key"] == c:
+                        sample_obj = {
+                            "platform": sample["platform"], 
+                            "type": "sample", 
+                            "submitter_id": sample["key"], 
+                            "molecular_datatype": sample["assay"], 
+                            "sample_source": sample["source"], 
+                            "subjects": {
+                                "submitter_id": sample["subject"]["key"]
+                            }
+                        }
+                        print(sample_obj)
+                        submitter.submit_record("NG00067", project_name, sample_obj)

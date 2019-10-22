@@ -134,6 +134,7 @@ for dataset in data['data']:
             print( "there will be %s subjects in this project" % len(project_sample_set) )
 
             for dictkey, value in enumerate(project_sample_set):
+                ## AW - why doesn't this create two subjects for subjects with multiple samples...but if tied to same subject entity in db then maybe overwrites with same info?
                 for samplekey, sample in sample_dict.iteritems():
                     if sample["subject"]["key"] == value:
 
@@ -150,4 +151,19 @@ for dataset in data['data']:
                         print( "creating subject record for " + subject["key"] )
                         submitter.submit_record(program_name, project_name, subject_obj)
 
+                        ## create a sample node for each passing through here while we're at it
+                        print( "creating sample record(s) for " + sample["key"] )
+                        sample_obj = {
+                            "platform": sample["platform"], 
+                            "type": "sample", 
+                            "submitter_id": sample["key"], 
+                            "molecular_datatype": sample["assay"], 
+                            "sample_source": sample["source"], 
+                            "subjects": {
+                                "submitter_id": sample["subject"]["key"]
+                            }
+                        }
+                        submitter.submit_record(program_name, project_name, sample_obj)
+
+                        ## do phenotypes next? (see slack for how to get values)
 
