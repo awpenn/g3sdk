@@ -40,25 +40,59 @@ submitter = Gen3Submission(endpoint, auth)
 # response = submitter.query(query)
 
 #set dump file name
-dumpfile_name = 'sample_subjects'
 
 # with open("jsondumps/%s.json" % dumpfile_name, "a") as outfile:
 #     # below, data from DSS api requires response.json() , from datastage = response
 #     json.dump(response.json(), outfile)
 
-response = requests.get(APIURL+urltail+"/1/sampleSets", headers=headers)
+## pulls samples from sets, makes big dict of samples for each dataset
+# response = requests.get(APIURL+urltail+"/1/sampleSets", headers=headers)
 
-response_data = response.json()["data"]
-super_dict = {}
-for sample_set in response_data:
-    urltail = "sampleSets"
-    request_string = APIURL+urltail+"/"+str(sample_set["id"])+"/samples?includes=subject"
-    response = requests.get(APIURL+urltail+"/"+str(sample_set["id"])+"/samples?includes=subject.fullConsent", headers=headers)
+# response_data = response.json()["data"]
+# super_dict = {}
+# for sample_set in response_data:
+#     urltail = "sampleSets"
+#     request_string = APIURL+urltail+"/"+str(sample_set["id"])+"/samples?includes=subject"
+#     response = requests.get(APIURL+urltail+"/"+str(sample_set["id"])+"/samples?includes=subject.fullConsent", headers=headers)
 
-    # merges three dictionaries returned into one
-    for k, v in response.json().iteritems():
-        super_dict.setdefault(k,[]).append(v)
+#     # merges three dictionaries returned into one
+#     for k, v in response.json().iteritems():
+#         super_dict.setdefault(k,[]).append(v)
+
+# with open("jsondumps/%s.json" % dumpfile_name, "a") as outfile:
+#     # below, data from DSS api requires response.json() , from datastage = response
+#     json.dump(super_dict, outfile)
+
+## getting phenotypes
+dumpfile_name = 'ds1_phenotypes'
+
+urltail = 'datasets'
+request_url = APIURL+urltail+"/1/subjectPhenotypes?includes=phenotype,subject&per_page=11000"
+response = requests.get(request_url, headers=headers)
+last_page = response.json()["meta"]["last_page"]
+phenotype_data = response.json()["data"]
+project_phenotype_dict = []
+
+for phenotype in phenotype_data:
+    project_phenotype_dict.append(phenotype)
+
+if last_page > 1:
+    for page in range( last_page + 1 ):
+        if page < 2:
+            continue
+        else:
+            response = requests.get(request_url+"&page="+str(page), headers=headers)
+            phenotype_data = response.json()["data"]
+            for phenotype in phenotype_data:
+                project_phenotype_dict.append(phenotype)
+    print('data from page %s loaded' %page)
+
+
+
+
+## take the first batch into an array, then call next
 
 with open("jsondumps/%s.json" % dumpfile_name, "a") as outfile:
     # below, data from DSS api requires response.json() , from datastage = response
-    json.dump(super_dict, outfile)
+    json.dump(project_phenotype_dict, outfile)
+

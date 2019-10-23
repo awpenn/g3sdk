@@ -43,14 +43,14 @@ submitter = Gen3Submission(endpoint, auth)
 #    print(data["data"]["program"][0]["id"])
 
 ## getting consents, as list?
-dataset_consents = []
-with open('jsondumps/consents.json') as json_file:
-    data = json.load(json_file)["data"]
-    for consent in data:
-        dataset_consents.append(consent["key"])
+# dataset_consents = []
+# with open('jsondumps/consents.json') as json_file:
+#     data = json.load(json_file)["data"]
+#     for consent in data:
+#         dataset_consents.append(consent["key"])
 
-    for c in dataset_consents:
-        project_name = "NG00067"+"_"+c
+#     for c in dataset_consents:
+#         project_name = "NG00067"+"_"+c
 #     project_obj = {
 #         "type": "project",
 #         "dbgap_accession_number": program_name+"_"+c,
@@ -149,21 +149,30 @@ with open('jsondumps/consents.json') as json_file:
     # print(value)
 
 ## creating sample records
-        with open("jsondumps/samples-from-dataset1.json", "r") as json_file:
-            data = json.load(json_file)
-            for key, sample in data.iteritems():
-                ## some subjects have 'null' consent, ignoring for now
-                if sample["subject"]["consent"] is not None:
-                    if sample["subject"]["consent"]["key"] == c:
-                        sample_obj = {
-                            "platform": sample["platform"], 
-                            "type": "sample", 
-                            "submitter_id": sample["key"], 
-                            "molecular_datatype": sample["assay"], 
-                            "sample_source": sample["source"], 
-                            "subjects": {
-                                "submitter_id": sample["subject"]["key"]
-                            }
-                        }
-                        print(sample_obj)
-                        submitter.submit_record("NG00067", project_name, sample_obj)
+        # with open("jsondumps/samples-from-dataset1.json", "r") as json_file:
+        #     data = json.load(json_file)
+        #     for key, sample in data.iteritems():
+        #         ## some subjects have 'null' consent, ignoring for now
+        #         if sample["subject"]["consent"] is not None:
+        #             if sample["subject"]["consent"]["key"] == c:
+        #                 sample_obj = {
+        #                     "platform": sample["platform"], 
+        #                     "type": "sample", 
+        #                     "submitter_id": sample["key"], 
+        #                     "molecular_datatype": sample["assay"], 
+        #                     "sample_source": sample["source"], 
+        #                     "subjects": {
+        #                         "submitter_id": sample["subject"]["key"]
+        #                     }
+        #                 }
+        #                 print(sample_obj)
+        #                 submitter.submit_record("NG00067", project_name, sample_obj)
+
+## loading phenotype data
+with open("jsondumps/ds1_phenotypes.json", "r") as json_file:
+    ## data here is a list created from all the phenotype nodes for a dataset
+    data = json.load(json_file)
+
+    for node in data:
+        if node["subject"]["key"] == 'C-ERF-90462':
+            print(node["phenotype"]["name"]+": "+node["value"])

@@ -1,7 +1,7 @@
 import gen3
 from gen3 import submission
 from gen3 import auth
-import pandas
+import pandas as pd
 import json
 from requests.auth import AuthBase
 import requests
@@ -55,6 +55,31 @@ for dataset in data['data']:
 
     fetched_program_id = submitter.query(query)["data"]["program"][0]["id"]
 
+    ## get all the phenotype nodes for a dataset, to be entered when subject/sample nodes created below
+
+    urltail = 'datasets'
+    request_url = APIURL+urltail+"/"+str(dss_dataset_id)+"/subjectPhenotypes?includes=phenotype,subject&per_page=11000"
+    response = requests.get(request_url, headers=headers)
+    last_page = response.json()["meta"]["last_page"]
+    phenotype_data = response.json()["data"]
+
+    ## this list is all the phenotype nodes from all the pages
+    print( "creating phenotype list for dataset " + str(dss_dataset_id) )
+    print( "api returning %s page(s) of phenotypes" % str(last_page) ) 
+    project_phenotype_list = []
+
+    for phenotype in phenotype_data:
+        project_phenotype_list.append(phenotype)
+
+    if last_page > 1:
+        for page in range( last_page + 1 ):
+            if page < 2:
+                continue
+            else:
+                response = requests.get(request_url+"&page="+str(page), headers=headers)
+                phenotype_data = response.json()["data"]
+                for phenotype in phenotype_data:
+                    project_phenotype_list.append(phenotype)
 
     ## get subjects/samples by querying sampleSets of a dataset with dss_dataset_id
     urltail = 'datasets'
@@ -127,6 +152,7 @@ for dataset in data['data']:
                     "id": fetched_project_id
                 }
             }
+
             print( "creating core_metadata_collection for " + program_name+"_" + c )
             submitter.submit_record(program_name, project_name, cmc_obj)
 
@@ -134,7 +160,7 @@ for dataset in data['data']:
             print( "there will be %s subjects in this project" % len(project_sample_set) )
 
             for dictkey, value in enumerate(project_sample_set):
-                ## AW - why doesn't this create two subjects for subjects with multiple samples...but if tied to same subject entity in db then maybe overwrites with same info?
+                ## AW - why doesn't this create two subjects for subjects with multiple samples...but if tied to same subject entity (with submitter id) in db then maybe overwrites with same info?
                 for samplekey, sample in sample_dict.iteritems():
                     if sample["subject"]["key"] == value:
 
@@ -163,7 +189,45 @@ for dataset in data['data']:
                                 "submitter_id": sample["subject"]["key"]
                             }
                         }
+
                         submitter.submit_record(program_name, project_name, sample_obj)
 
                         ## do phenotypes next? (see slack for how to get values)
+                        current_subject_id = sample["subject"]["key"]
+                        current_subject_phenotypes_dict = {}
+                        
+                        for pnode in project_phenotype_list:
+                            if pnode["subject"]["key"] == current_subject_id:
+                                # print(pnode["phenotype"]["name"]+": "+pnode["value"]) = phenotype: phenotype value
+
+                                if pnode["phenotype"]["name"] == 'apoe':
+                                    current_subject_phenotypes_dict["apoe"] = pnode["value"]
+
+                                if pnode["phenotype"]["name"] == 'sex':
+                                    current_subject_phenotypes_dict["sex"] = pnode["value"]
+
+                                if pnode["phenotype"]["name"] == 'race':
+                                    current_subject_phenotypes_dict["race"] = pnode["value"]
+
+                                if pnode["phenotype"]["name"] == 'ethnicity':
+                                    current_subject_phenotypes_dict["ethnicity"] = pnode["value"]
+
+                                if pnode["phenotype"]["name"] == 'dx':
+                                    current_subject_phenotypes_dict["dx"] = pnode["value"]
+
+                        phenotype_obj = {
+                            "APOE": current_subject_phenotypes_dict["apoe"], 
+                            "sex": current_subject_phenotypes_dict["sex"], 
+                            "subjects": {
+                                "submitter_id": current_subject_id
+                            }, 
+                            "race": current_subject_phenotypes_dict["race"], 
+                            "type": "phenotype", 
+                            "diagnosis": current_subject_phenotypes_dict["dx"], 
+                            "submitter_id": current_subject_id + "_pheno", 
+                            "ethnicity": current_subject_phenotypes_dict["ethnicity"]
+                        }
+
+                        print("creating phenotype record for " + current_subject_id)
+                        submitter.submit_record(program_name, project_name, phenotype_obj)
 
