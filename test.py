@@ -127,7 +127,6 @@ for dataset in data['data']:
         if len(project_sample_set) > 0:
             project_obj = {
                 "type": "project",
-
                 "dbgap_accession_number": program_name+"_"+c,
                 "name": program_name+"_"+c,
                 "code": program_name+"_"+c,
@@ -158,7 +157,7 @@ for dataset in data['data']:
 
             ## for subject in dictionary, create a subject record
             print( "there will be %s subjects in this project" % len(project_sample_set) )
-
+            ## this loop will create all subject, phenotype, and samples for a particular project
             for dictkey, value in enumerate(project_sample_set):
                 ## AW - why doesn't this create two subjects for subjects with multiple samples...but if tied to same subject entity (with submitter id) in db then maybe overwrites with same info?
                 for samplekey, sample in sample_dict.iteritems():
@@ -193,7 +192,7 @@ for dataset in data['data']:
                         submitter.submit_record(program_name, project_name, sample_obj)
 
                         ## do phenotypes next? (see slack for how to get values)
-                        current_subject_id = sample["subject"]["key"]
+                        current_subject_id = subject["key"]
                         current_subject_phenotypes_dict = {}
                         
                         for pnode in project_phenotype_list:
@@ -210,7 +209,10 @@ for dataset in data['data']:
                                     current_subject_phenotypes_dict["race"] = pnode["value"]
 
                                 if pnode["phenotype"]["name"] == 'ethnicity':
-                                    current_subject_phenotypes_dict["ethnicity"] = pnode["value"]
+                                    if pnode["value"] == "na":
+                                        current_subject_phenotypes_dict["ethnicity"] = "not applicable/not available"
+                                    else:
+                                        current_subject_phenotypes_dict["ethnicity"] = pnode["value"]
 
                                 if pnode["phenotype"]["name"] == 'dx':
                                     current_subject_phenotypes_dict["dx"] = pnode["value"]
@@ -230,4 +232,8 @@ for dataset in data['data']:
 
                         print("creating phenotype record for " + current_subject_id)
                         submitter.submit_record(program_name, project_name, phenotype_obj)
-
+            ## once all the subject, sample, and phenotype records for a project are created, create a fileset_[consent_level]
+            ## node corresponding to current project (consent level) for each fileset in the program (dataset), query for the files
+            ## of each using conditional based on current consent ("c in dataset current loop") and the fileset query's
+            ## return data's `sample.subject.consent.key`, create file nodes linked to sample based on `sample.key` and
+            ## to fileset based on generated fileset GUID, [filsetaccno+type+filePK]
