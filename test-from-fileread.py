@@ -5,6 +5,7 @@ import pandas
 import json
 from requests.auth import AuthBase
 import requests
+import hashlib
 
 from settings import TOKEN, APIURL, CTYPE, ACCEPT
 
@@ -179,37 +180,62 @@ submitter = Gen3Submission(endpoint, auth)
 
 
 ## fileset builder
-urltail = 'datasets'
-request_url = APIURL+urltail+"/1/filesets"
-print('Getting fileset data from ' + request_url)
-response = requests.get(request_url, headers=headers)
-fileset_data = response.json()["data"]
-fetched_project_id = "1b7600d2-355b-5eb1-a2a5-c83399eb8906"
+# urltail = 'datasets'
+# request_url = APIURL+urltail+"/1/filesets"
+# print('Getting fileset data from ' + request_url)
+# response = requests.get(request_url, headers=headers)
+# fileset_data = response.json()["data"]
+# fetched_project_id = "1b7600d2-355b-5eb1-a2a5-c83399eb8906"
 
-dataset_consents = []
-with open('jsondumps/consents.json') as json_file:
+# dataset_consents = []
+# with open('jsondumps/consents.json') as json_file:
+#     data = json.load(json_file)["data"]
+#     for consent in data:
+#         dataset_consents.append(consent["key"])
+
+# for c in dataset_consents:
+#     for fileset in fileset_data:
+#         print(fileset)
+#         fileset_description = fileset["description"]
+#         # # accession not yet in API data so will fake
+#         # # fileset_name = fileset.accession + "_" + c
+#         fileset_name = "fs0000"+str(fileset["id"])+"_"+c
+#         # # accession not yet in API data so will fake
+#         # # fileset_submitter_id = fileset.accession + "_" + c
+#         fileset_submitter_id = "fs0000"+str(fileset["id"])+"_"+c
+
+#         fileset_object =  {
+#             "*projects": {
+#             "id": fetched_project_id
+#             }, 
+#             "*description": fileset_description, 
+#             "*fileset_name": fileset_name, 
+#             "*type": "fileset", 
+#             "*submitter_id": fileset_submitter_id
+#         }
+#         print(fileset_object)
+file_md5 = hashlib.md5("wowowow").hexdigest()
+print(file_md5)
+## file manifests from query of filesets
+fileset_sample_files_list = []
+with open("jsondumps/fake-nonsample-fileset-manifest.json", "r") as json_file:
+    ## data here is a list created from all the phenotype nodes for a dataset
     data = json.load(json_file)["data"]
-    for consent in data:
-        dataset_consents.append(consent["key"])
 
-for c in dataset_consents:
-    for fileset in fileset_data:
-        print(fileset)
-        fileset_description = fileset["description"]
-        # # accession not yet in API data so will fake
-        # # fileset_name = fileset.accession + "_" + c
-        fileset_name = "fs0000"+str(fileset["id"])+"_"+c
-        # # accession not yet in API data so will fake
-        # # fileset_submitter_id = fileset.accession + "_" + c
-        fileset_submitter_id = "fs0000"+str(fileset["id"])+"_"+c
+    for file in data:
+        fileset_sample_files_list.append(file)
 
-        fileset_object =  {
-            "*projects": {
-            "id": fetched_project_id
-            }, 
-            "*description": fileset_description, 
-            "*fileset_name": fileset_name, 
-            "*type": "fileset", 
-            "*submitter_id": fileset_submitter_id
-        }
-        print(fileset_object)
+
+    print(len(fileset_sample_files_list))
+    print(fileset_sample_files_list[0])
+
+with open("jsondumps/fake-nonsample-fileset-manifest.json", "r") as json_file:
+    ## data here is a list created from all the phenotype nodes for a dataset
+    data = json.load(json_file)["data"]
+
+    for file in data:
+        fileset_sample_files_list.append(file)
+
+
+    print(len(fileset_sample_files_list))
+    print(fileset_sample_files_list[0])
