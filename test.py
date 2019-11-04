@@ -54,9 +54,14 @@ for dataset in data['data']:
     query = '{program(name:\"%s\"){id}}' % program_name
 
     fetched_program_id = submitter.query(query)["data"]["program"][0]["id"]
+    ## get all the filesets for a dataset, to be used later, broken up by consent level
+    urltail = 'datasets'
+    request_url = APIURL+urltail+"/"+str(dss_dataset_id)+"/filesets"
+    print('Getting fileset data from ' + request_url)
+    response = requests.get(request_url, headers=headers)
+    fileset_data = response.json()["data"]
 
     ## get all the phenotype nodes for a dataset, to be entered when subject/sample nodes created below
-
     urltail = 'datasets'
     request_url = APIURL+urltail+"/"+str(dss_dataset_id)+"/subjectPhenotypes?includes=phenotype,subject&per_page=11000"
     response = requests.get(request_url, headers=headers)
@@ -182,16 +187,15 @@ for dataset in data['data']:
                             "platform": sample["platform"], 
                             "type": "sample", 
                             "submitter_id": sample["key"], 
-                            "molecular_datatype": sample["assay"], 
+                            "data_type": sample["assay"], 
                             "sample_source": sample["source"], 
                             "subjects": {
                                 "submitter_id": sample["subject"]["key"]
                             }
                         }
-
+                        # print(sample_obj) # for checking object correctness
                         submitter.submit_record(program_name, project_name, sample_obj)
 
-                        ## do phenotypes next? (see slack for how to get values)
                         current_subject_id = subject["key"]
                         current_subject_phenotypes_dict = {}
                         
@@ -237,3 +241,29 @@ for dataset in data['data']:
             ## of each using conditional based on current consent ("c in dataset current loop") and the fileset query's
             ## return data's `sample.subject.consent.key`, create file nodes linked to sample based on `sample.key` and
             ## to fileset based on generated fileset GUID, [filsetaccno+type+filePK]
+
+            ## was captured for dataset above as `fileset_data` so don't have to query for each consent
+            print('Creating filesets for ' + project_name)
+            for fileset in fileset_data:
+                fileset_description = fileset["description"]
+                # # accession not yet in API data so will fake
+                # # fileset_name = fileset.accession + "_" + c
+                fileset_name = "fs0000"+str(fileset["id"])+"_"+c
+                # # accession not yet in API data so will fake
+                # # fileset_submitter_id = fileset.accession + "_" + c
+                fileset_submitter_id = "fs0000"+str(fileset["id"])+"_"+c
+
+                fileset_obj =  {
+                    "*projects": {
+                    "id": fetched_project_id
+                    }, 
+                    "*description": fileset_description, 
+                    "*fileset_name": fileset_name, 
+                    "*type": "fileset", 
+                    "*submitter_id": fileset_submitter_id
+                }
+                print(fileset_obj)
+                submitter.submit_record(program_name, project_name, fileset_obj)
+
+
+
