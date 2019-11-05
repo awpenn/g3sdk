@@ -271,10 +271,10 @@ for dataset in data['data']:
                 fileset_description = fileset["description"]
                 # # accession not yet in API data so will fake
                 # # fileset_name = fileset.accession + "_" + c
-                fileset_name = "fs0000"+str(fileset_id)+"_"+c
+                fileset_name = fileset["accession"]+"_"+c
                 # # accession not yet in API data so will fake
                 # # fileset_submitter_id = fileset.accession + "_" + c
-                fileset_submitter_id = "fs0000"+str(fileset["id"])+"_"+c
+                fileset_submitter_id = fileset["accession"]+"_"+c
 
                 fileset_obj =  {
                     "*projects": {
@@ -331,18 +331,19 @@ for dataset in data['data']:
 
                 ## Get non-sample-related files for each fileset while creating, 
                 ## first filtering on fileSetId (in fileset_nonsample_files_list object) == fileset_id
-                ## then by c (current consent)
+                ## then by c (current consent) == consent_key in the list
                 for file in fileset_nonsample_files_list:
-                    if file["fileSeId"] == fileset_id and file["consent"]["key"] == c:
+                    if file["fileSetId"] == fileset_id and file["consent_key"] == c:
                         ##in DSS type=cram, index, etc., on datastage that is format
                         ##file_type = ???? not in data (WGS WES etc.)
+                        file_type = 'n/a'
                         file_size = file["size"]
                         file_path = file["path"]
                         file_name = file["name"]
                         file_format = file["type"]
-                        cmc_submitter_id = project_name+"_core_metadata_collection"
-                        file_submitter_id = file_name + "_" + file_format + "_" + file["id"]
-                        file_md5 = hashlib.md5( file_name + file_format + file_id) .hexdigest()
+                        cmc_submitter_id = project_name + "_core_metadata_collection"
+                        file_submitter_id = file_name + "_" + file_format + "_" + str(file["id"])
+                        file_md5 = hashlib.md5( file_name + file_format + str(file_id) ).hexdigest()
 
                         aldf_object = {
                             "*data_type": file_type, 

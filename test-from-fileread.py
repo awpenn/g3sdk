@@ -217,25 +217,69 @@ submitter = Gen3Submission(endpoint, auth)
 file_md5 = hashlib.md5("wowowow").hexdigest()
 print(file_md5)
 ## file manifests from query of filesets
-fileset_sample_files_list = []
+# fileset_sample_files_list = []
+# with open("jsondumps/fake-nonsample-fileset-manifest.json", "r") as json_file:
+#     ## data here is a list created from all the phenotype nodes for a dataset
+#     data = json.load(json_file)["data"]
+
+#     for file in data:
+#         fileset_sample_files_list.append(file)
+
+
+#     print(len(fileset_sample_files_list))
+#     print(fileset_sample_files_list[0])
+
+fileset_nonsample_files_list = []
 with open("jsondumps/fake-nonsample-fileset-manifest.json", "r") as json_file:
     ## data here is a list created from all the phenotype nodes for a dataset
     data = json.load(json_file)["data"]
 
     for file in data:
-        fileset_sample_files_list.append(file)
+        fileset_nonsample_files_list.append(file)
 
 
-    print(len(fileset_sample_files_list))
-    print(fileset_sample_files_list[0])
+    # print(len(fileset_nonsample_files_list))
+    # print(fileset_nonsample_files_list[0])
+project_name = 'NG00067_DS-ADRD-IRB-PUB'
+program_name = 'NG00067'
+fileset_id = 1
+c = "DS-ADRD-IRB-PUB"
 
-with open("jsondumps/fake-nonsample-fileset-manifest.json", "r") as json_file:
-    ## data here is a list created from all the phenotype nodes for a dataset
-    data = json.load(json_file)["data"]
+for file in fileset_nonsample_files_list:
+    if file["fileSetId"] == fileset_id and file["consent"]["key"] == c:
+                        ##in DSS type=cram, index, etc., on datastage that is format
+        file_type = "WGS"
+        file_id = file["id"]
+        file_size = file["size"]
+        file_path = file["path"]
+        file_name = file["name"]
+        file_format = file["type"]
+        fileset_submitter_id = 'fs00003_DS-ADRD-IRB-PUB'
+        cmc_submitter_id = project_name+"_core_metadata_collection"
+        file_submitter_id = file_name + "_" + file_format + "_" + str(file["id"])
+        file_md5 = hashlib.md5( file_name + file_format + str(file_id) ).hexdigest()
 
-    for file in data:
-        fileset_sample_files_list.append(file)
+        aldf_obj = {
+            "*data_type": file_type, 
+            "filesets": {
+                "submitter_id": fileset_submitter_id
+            }, 
+            "*consent": c, 
+            "core_metadata_collections": {
+                "submitter_id": cmc_submitter_id
+            }, 
+            "*type": "aggregate_level_data_file", 
+            "*file_path": file_path, 
+            "*data_format": file_format, 
+            "*md5sum": file_md5, 
+            "*file_size": file_size, 
+            "*submitter_id": file_submitter_id, 
+            "*file_name": file_name
+            }
+                      
+                        ## currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
 
-
-    print(len(fileset_sample_files_list))
-    print(fileset_sample_files_list[0])
+        print(aldf_obj)
+        submitter.submit_record(program_name, project_name, aldf_obj)
+    else:
+        print('skipped')
