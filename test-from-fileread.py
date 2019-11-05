@@ -285,56 +285,106 @@ submitter = Gen3Submission(endpoint, auth)
 
 
 ## testing sample file build/load
-fileset_sample_files_list = []
-with open("jsondumps/fake-sample-fileset-manifest.json", "r") as json_file:
+# fileset_sample_files_list = []
+# with open("jsondumps/fake-sample-fileset-manifest.json", "r") as json_file:
+#     ## data here is a list created from all the phenotype nodes for a dataset
+#     data = json.load(json_file)["data"]
+
+#     for file in data:
+#         fileset_sample_files_list.append(file)
+
+# project_name = 'NG00067_DS-ADRD-IRB-PUB'
+# program_name = 'NG00067'
+# fileset_submitter_id = 'fs00003_DS-ADRD-IRB-PUB'
+# fileset_id = 1
+# c = "DS-ADRD-IRB-PUB"
+
+# for file in fileset_sample_files_list:
+#     if file["fileset_id"] == fileset_id and file["sample"]["subject"]["consent"]["key"] == c:
+#         ##in DSS type=cram, index, etc., on datastage that is format
+#         file_format = file["type"]
+#         ##in datastage this is WGS, WES, etc., which is sample.assay in dss data
+#         file_type = file["sample"]["assay"]
+#         file_path = file["path"]
+#         file_name = file["name"]
+#         file_size = file["size"]
+#         file_id = file["id"]
+#         sample_key = file["sample"]["key"]
+#         cmc_submitter_id = project_name+"_core_metadata_collection"
+#         file_submitter_id = file_name + "_" + file_format + "_" + str(file_id)
+#         file_md5 = hashlib.md5( file_name + file_format + str(file_id)).hexdigest()
+                        
+#                         ## currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
+#         ildf_obj = {
+#             "*data_type": file_type, 
+#             "filesets": {
+#             "submitter_id": fileset_submitter_id
+#             }, 
+#             "*consent": c, 
+#             "core_metadata_collections": {
+#             "submitter_id": cmc_submitter_id
+#             }, 
+#             "*type": "individual_level_data_file", 
+#             "*file_path": file_path, 
+#             "*data_format": file_format, 
+#             "*file_name": file_name, 
+#             "*md5sum": file_md5, 
+#             "*file_size": file_size, 
+#             "*samples": {
+#             "submitter_id": "A-ADC-AD010341-BL-NCR-14AD75054"
+#             }, 
+#             "*submitter_id": file_submitter_id
+#         }
+#         # print("creating record for file:  " + file_submitter_id )
+#         # print(ildf_obj)
+#         submitter.submit_record(program_name, project_name, ildf_obj)
+
+## testing allcon build/load
+fileset_allconsents_files_list = []
+with open("jsondumps/fake-allcon-fileset-manifest.json", "r") as json_file:
     ## data here is a list created from all the phenotype nodes for a dataset
     data = json.load(json_file)["data"]
 
     for file in data:
-        fileset_sample_files_list.append(file)
+        fileset_allconsents_files_list.append(file)
 
+print(len(fileset_allconsents_files_list))  
 project_name = 'NG00067_DS-ADRD-IRB-PUB'
 program_name = 'NG00067'
 fileset_submitter_id = 'fs00003_DS-ADRD-IRB-PUB'
 fileset_id = 1
 c = "DS-ADRD-IRB-PUB"
 
-for file in fileset_sample_files_list:
-    if file["fileset_id"] == fileset_id and file["sample"]["subject"]["consent"]["key"] == c:
-        ##in DSS type=cram, index, etc., on datastage that is format
+
+for file in fileset_allconsents_files_list:
+    if file["fileset_id"] == fileset_id:
         file_format = file["type"]
-        ##in datastage this is WGS, WES, etc., which is sample.assay in dss data
-        file_type = file["sample"]["assay"]
+        ##in datastage this is WGS, WES, etc., for allcons not in data and maybe not applicable, for now n/a
+        file_type = 'n/a'
         file_path = file["path"]
         file_name = file["name"]
         file_size = file["size"]
         file_id = file["id"]
-        sample_key = file["sample"]["key"]
-        cmc_submitter_id = project_name+"_core_metadata_collection"
+        cmc_submitter_id = project_name + "_core_metadata_collection"
         file_submitter_id = file_name + "_" + file_format + "_" + str(file_id)
         file_md5 = hashlib.md5( file_name + file_format + str(file_id)).hexdigest()
                         
-                        ## currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
-        ildf_obj = {
+        aldf_obj = {
             "*data_type": file_type, 
             "filesets": {
-            "submitter_id": fileset_submitter_id
+                "submitter_id": fileset_submitter_id
             }, 
             "*consent": c, 
             "core_metadata_collections": {
-            "submitter_id": cmc_submitter_id
+                "submitter_id": cmc_submitter_id
             }, 
-            "*type": "individual_level_data_file", 
+            "*type": "aggregate_level_data_file", 
             "*file_path": file_path, 
             "*data_format": file_format, 
-            "*file_name": file_name, 
             "*md5sum": file_md5, 
             "*file_size": file_size, 
-            "*samples": {
-            "submitter_id": "A-ADC-AD010341-BL-NCR-14AD75054"
-            }, 
-            "*submitter_id": file_submitter_id
-        }
-        # print("creating record for file:  " + file_submitter_id )
-        # print(ildf_obj)
-        submitter.submit_record(program_name, project_name, ildf_obj)
+            "*submitter_id": file_submitter_id, 
+            "*file_name": file_name
+            }
+
+        submitter.submit_record(program_name, project_name, aldf_obj)
