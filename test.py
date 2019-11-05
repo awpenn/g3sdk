@@ -93,10 +93,10 @@ for dataset in data['data']:
         request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileAllConsents"
         print( 'getting all-consent files from ' + request_url )
         response = requests.get(request_url, headers=headers)
-        fileset_allconsent_data = response.json()["data"]
+        fileset_allconsents_data = response.json()["data"]
 
-        for file in fileset_allconsent_data:
-            fileset_allconsent_files_list.append(file)
+        for file in fileset_allconsents_data:
+            fileset_allconsents_files_list.append(file)
 
     ## get all the phenotype nodes for a dataset, to be entered when subject/sample nodes created below
     urltail = 'datasets'
