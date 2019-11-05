@@ -293,17 +293,18 @@ for dataset in data['data']:
                 ## then by c (current consent)
                 for file in fileset_sample_files_list:
                     if file["fileset_id"] == fileset_id and file["subject"]["consent"]["key"] == c:
-                          ##in DSS type=cram, index, etc., on datastage that is format
+                        ##in DSS type=cram, index, etc., on datastage that is format
                         file_format = file["type"]
                         ##in datastage this is WGS, WES, etc., which is sample.assay in dss data
                         file_type = file["sample"]["assay"]
                         file_path = file["path"]
                         file_name = file["name"]
                         file_size = file["size"]
-                        sample_id = file["sample_id"]
+                        file_id = file["id"]
+                        sample_key = file["sample"]["key"]
                         cmc_submitter_id = project_name+"_core_metadata_collection"
-                        file_submitter_id = file_name + "_" + file_format + "_" + file["id"]
-                        file_md5 = hashlib.md5( file_name + file_format + file_id).hexdigest()
+                        file_submitter_id = file_name + "_" + file_format + "_" + str(file_id)
+                        file_md5 = hashlib.md5( file_name + file_format + str(file_id) ).hexdigest()
                         
                         ## currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
                         idlf_obj = {
@@ -322,27 +323,28 @@ for dataset in data['data']:
                             "*md5sum": file_md5, 
                             "*file_size": file_size, 
                             "*samples": {
-                            "submitter_id": sample_id
+                            "submitter_id": sample_key
                             }, 
                             "*submitter_id": file_submitter_id
                         }
                         print("creating record for file:  " + file_submitter_id )
                         submitter.submit_record(program_name, project_name, ildf_obj)
 
-                ## Get non-sample-related files for each fileset while creating, 
-                ## first filtering on fileSetId (in fileset_nonsample_files_list object) == fileset_id
-                ## then by c (current consent) == consent_key in the list
+                # Get non-sample-related files for each fileset while creating, 
+                # first filtering on fileSetId (in fileset_nonsample_files_list object) == fileset_id
+                # then by c (current consent) == consent_key in the list
                 for file in fileset_nonsample_files_list:
                     if file["fileSetId"] == fileset_id and file["consent_key"] == c:
                         ##in DSS type=cram, index, etc., on datastage that is format
-                        ##file_type = ???? not in data (WGS WES etc.)
+                        ##file_type = ???? not in data (WGS WES etc.)... n/a for now
                         file_type = 'n/a'
                         file_size = file["size"]
                         file_path = file["path"]
                         file_name = file["name"]
                         file_format = file["type"]
+                        file_id = file["id"]
                         cmc_submitter_id = project_name + "_core_metadata_collection"
-                        file_submitter_id = file_name + "_" + file_format + "_" + str(file["id"])
+                        file_submitter_id = file_name + "_" + file_format + "_" + str(file_id)
                         file_md5 = hashlib.md5( file_name + file_format + str(file_id) ).hexdigest()
 
                         aldf_object = {
