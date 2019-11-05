@@ -65,7 +65,7 @@ for dataset in data['data']:
     ## make lists with fileset sample non-sample, and all-con files
     fileset_sample_files_list = []
     fileset_nonsample_files_list = []
-    fileset_allconsent_files_list = []
+    fileset_allconsents_files_list = []
 
     ## will probably have to change this below because the response will have to be paginated
     for fileset in fileset_data:
