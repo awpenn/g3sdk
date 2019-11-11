@@ -44,12 +44,9 @@ def sex_transform(pnode):
     dv = ''
     accepted_values = ["male", "female"]
     p_dict = json.loads(pnode["phenotype"]["values"])
-    for key, value in p_dict.iteritems():
-        # this is how will work in operation?    
-        # if key == p:
-        #     dv = value
-        if value.lower() == p:
-            dv = value.lower()
+
+    if p_dict[str(p)] in accepted_values:
+        dv = value.lower()
 
     return dv    
 
