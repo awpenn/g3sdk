@@ -28,8 +28,92 @@ endpoint = "https://gen3test.lisanwanglab.org"
 auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 
 submitter = Gen3Submission(endpoint, auth)
-# how to add to base string
-# APIURL+urltail"/1/subjects 
+
+## functions to transform phenotypes
+def apoe_tranform(pnode):
+    print('in apoe transform')
+    accepted_values = ["22", "23", "24", "33", "34", "44", "na"]
+    if pnode["value"] in accepted_values:
+        return pnode["value"]
+    else:
+        return 'na'
+
+def sex_transform(pnode):
+    print('in sex transform')
+    # print(pnode)
+    p = pnode["value"]
+    p_dict = json.loads(pnode["phenotype"]["values"])
+    accepted_values = ["male", "female"]
+
+    if p_dict[str(p)] in accepted_values:
+        ## derived value
+        dv = p_dict[str(p)].lower()
+
+    return dv    
+
+def race_transform(pnode):
+    print('in race transform')
+    p = pnode["value"]
+    p_dict = json.loads(pnode["phenotype"]["values"])
+
+    accepted_values = ["american indian/alaska native", "asian", "black or african american", "native hawaiian or other pacific islander", "other", "white", "na"]
+    
+    if p_dict[str(p)] in accepted_values:
+        dv = p_dict[str(p)].lower()
+    else:
+        dv = 'na'
+
+    return dv
+
+def ethnicity_transform(pnode):
+    print('in ethnicity transform')
+    p = pnode["value"]
+    p_dict = json.loads(pnode["phenotype"]["values"])
+
+    accepted_values = ["hispanic or latino", "not hispanic or latino", "not applicable/not available"]
+
+    if p_dict[str(p)] in accepted_values:
+        dv = p_dict[str(p)].lower()
+    else:
+        dv = 'na'
+    
+    return dv
+
+def dx_transform(pnode):
+    print('in dx transform')
+    p = pnode["value"]
+    p_dict = json.loads(pnode["phenotype"]["values"])
+
+    ## will have to be changed to a calculation or something correct?
+    accepted_values = [
+                    "ad at most recent visit",
+                    "definite ad",
+                    "family reported ad",
+                    "family reported no ad",
+                    "incident ad",
+                    "mci at most recent visit",
+                    "na",
+                    "unknown",
+                    "no ad or mci at most recent visit",
+                    "no dementia",
+                    "no prevalent or incident ad",
+                    "other dementia",
+                    "possible ad",
+                    "prevalent ad",
+                    "probable ad"
+                ]
+
+    if p_dict[str(p)] in accepted_values:
+        dv = p_dict[str(p)].lower()
+    else:
+        dv = 'na'
+    
+    return dv
+
+
+
+## how to add to base string
+## APIURL+urltail"/1/subjects 
 
 response = requests.get(APIURL+urltail, headers=headers)
 # response.json() produces a dictionary
@@ -69,35 +153,35 @@ for dataset in data['data']:
     fileset_allconsents_files_list = []
 
     ## will probably have to change this below because the response will have to be paginated
-    for fileset in fileset_data:
-        urltail = 'filesets'
+    # for fileset in fileset_data:
+    #     urltail = 'filesets'
 
-        ## get sample-related files
-        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileSamples?includes=sample.subject.fullConsent"
-        print( 'getting sample files from ' + request_url )
-        response = requests.get(request_url, headers=headers)
-        fileset_sample_data = response.json()["data"]
+    #     ## get sample-related files
+    #     request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileSamples?includes=sample.subject.fullConsent"
+    #     print( 'getting sample files from ' + request_url )
+    #     response = requests.get(request_url, headers=headers)
+    #     fileset_sample_data = response.json()["data"]
 
-        for file in fileset_sample_data:
-            fileset_sample_files_list.append(file)
+    #     for file in fileset_sample_data:
+    #         fileset_sample_files_list.append(file)
 
-        ## get non-sample files
-        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileNonSamples"
-        print( 'getting non-sample files from ' + request_url )
-        response = requests.get(request_url, headers=headers)
-        fileset_nonsample_data = response.json()["data"]
+    #     ## get non-sample files
+    #     request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileNonSamples"
+    #     print( 'getting non-sample files from ' + request_url )
+    #     response = requests.get(request_url, headers=headers)
+    #     fileset_nonsample_data = response.json()["data"]
 
-        for file in fileset_nonsample_data:
-            fileset_nonsample_files_list.append(file)
+    #     for file in fileset_nonsample_data:
+    #         fileset_nonsample_files_list.append(file)
 
-        ## get all-con files
-        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileAllConsents"
-        print( 'getting all-consent files from ' + request_url )
-        response = requests.get(request_url, headers=headers)
-        fileset_allconsents_data = response.json()["data"]
+    #     ## get all-con files
+    #     request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileAllConsents"
+    #     print( 'getting all-consent files from ' + request_url )
+    #     response = requests.get(request_url, headers=headers)
+    #     fileset_allconsents_data = response.json()["data"]
 
-        for file in fileset_allconsents_data:
-            fileset_allconsents_files_list.append(file)
+    #     for file in fileset_allconsents_data:
+    #         fileset_allconsents_files_list.append(file)
 
     ## get all the phenotype nodes for a dataset, to be entered when subject/sample nodes created below
     urltail = 'datasets'
@@ -240,24 +324,24 @@ for dataset in data['data']:
                         for pnode in project_phenotype_list:
                             if pnode["subject"]["key"] == current_subject_id:
                                 # print(pnode["phenotype"]["name"]+": "+pnode["value"]) = phenotype: phenotype value
+                                ## these are our five 'core-harmonized' phenotypes that need to be sought out
 
-                                if pnode["phenotype"]["name"] == 'apoe':
-                                    current_subject_phenotypes_dict["apoe"] = pnode["value"]
+                                if pnode["phenotype"]["name"].lower() == "apoe":
+                                    current_subject_phenotypes_dict["apoe"] = apoe_tranform(pnode)
+                                
+                                if pnode["phenotype"]["name"].lower() in ["sex", "gender"]:
+                                    current_subject_phenotypes_dict["sex"] = sex_transform(pnode)
 
-                                if pnode["phenotype"]["name"] == 'sex':
-                                    current_subject_phenotypes_dict["sex"] = pnode["value"]
+                                if pnode["phenotype"]["name"].lower() in ["race"]:
+                                    current_subject_phenotypes_dict["sex"] = race_transform(pnode)
 
-                                if pnode["phenotype"]["name"] == 'race':
-                                    current_subject_phenotypes_dict["race"] = pnode["value"]
+                                if pnode["phenotype"]["name"].lower() in ["ethnicity"]:
+                                    current_subject_phenotypes_dict["sex"] = ethnicity_transform(pnode)
 
-                                if pnode["phenotype"]["name"] == 'ethnicity':
-                                    if pnode["value"] == "na":
-                                        current_subject_phenotypes_dict["ethnicity"] = "not applicable/not available"
-                                    else:
-                                        current_subject_phenotypes_dict["ethnicity"] = pnode["value"]
+                                if pnode["phenotype"]["name"].lower() in ["dx", "diagnosis"]:
+                                    current_subject_phenotypes_dict["sex"] = dx_transform(pnode)
 
-                                if pnode["phenotype"]["name"] == 'dx':
-                                    current_subject_phenotypes_dict["dx"] = pnode["value"]
+                        print(current_subject_phenotypes_dict)
 
                         phenotype_obj = {
                             "APOE": current_subject_phenotypes_dict["apoe"], 
