@@ -31,7 +31,6 @@ submitter = Gen3Submission(endpoint, auth)
 
 ## functions to transform phenotypes
 def apoe_tranform(pnode):
-    print('in apoe transform')
     accepted_values = ["22", "23", "24", "33", "34", "44", "na"]
     if pnode["value"] in accepted_values:
         return pnode["value"]
@@ -39,9 +38,9 @@ def apoe_tranform(pnode):
         return 'na'
 
 def sex_transform(pnode):
-    print('in sex transform')
     # print(pnode)
-    p = pnode["value"]
+    p = 0
+    # p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
     accepted_values = ["male", "female"]
 
@@ -52,8 +51,8 @@ def sex_transform(pnode):
     return dv    
 
 def race_transform(pnode):
-    print('in race transform')
-    p = pnode["value"]
+    p = 0
+    # p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
 
     accepted_values = ["american indian/alaska native", "asian", "black or african american", "native hawaiian or other pacific islander", "other", "white", "na"]
@@ -66,8 +65,8 @@ def race_transform(pnode):
     return dv
 
 def ethnicity_transform(pnode):
-    print('in ethnicity transform')
-    p = pnode["value"]
+    p = 0
+    # p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
 
     accepted_values = ["hispanic or latino", "not hispanic or latino", "not applicable/not available"]
@@ -75,13 +74,13 @@ def ethnicity_transform(pnode):
     if p_dict[str(p)] in accepted_values:
         dv = p_dict[str(p)].lower()
     else:
-        dv = 'na'
+        dv = 'not applicable/not available'
     
     return dv
 
 def dx_transform(pnode):
-    print('in dx transform')
-    p = pnode["value"]
+    p = 0
+    # p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
 
     ## will have to be changed to a calculation or something correct?
@@ -109,7 +108,6 @@ def dx_transform(pnode):
         dv = 'na'
     
     return dv
-
 
 
 ## how to add to base string
@@ -152,36 +150,36 @@ for dataset in data['data']:
     fileset_nonsample_files_list = []
     fileset_allconsents_files_list = []
 
-    ## will probably have to change this below because the response will have to be paginated
-    # for fileset in fileset_data:
-    #     urltail = 'filesets'
+    # will probably have to change this below because the response will have to be paginated
+    for fileset in fileset_data:
+        urltail = 'filesets'
 
-    #     ## get sample-related files
-    #     request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileSamples?includes=sample.subject.fullConsent"
-    #     print( 'getting sample files from ' + request_url )
-    #     response = requests.get(request_url, headers=headers)
-    #     fileset_sample_data = response.json()["data"]
+        ## get sample-related files
+        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileSamples?includes=sample.subject.fullConsent"
+        print( 'getting sample files from ' + request_url )
+        response = requests.get(request_url, headers=headers)
+        fileset_sample_data = response.json()["data"]
 
-    #     for file in fileset_sample_data:
-    #         fileset_sample_files_list.append(file)
+        for file in fileset_sample_data:
+            fileset_sample_files_list.append(file)
 
-    #     ## get non-sample files
-    #     request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileNonSamples"
-    #     print( 'getting non-sample files from ' + request_url )
-    #     response = requests.get(request_url, headers=headers)
-    #     fileset_nonsample_data = response.json()["data"]
+        ## get non-sample files
+        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileNonSamples"
+        print( 'getting non-sample files from ' + request_url )
+        response = requests.get(request_url, headers=headers)
+        fileset_nonsample_data = response.json()["data"]
 
-    #     for file in fileset_nonsample_data:
-    #         fileset_nonsample_files_list.append(file)
+        for file in fileset_nonsample_data:
+            fileset_nonsample_files_list.append(file)
 
-    #     ## get all-con files
-    #     request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileAllConsents"
-    #     print( 'getting all-consent files from ' + request_url )
-    #     response = requests.get(request_url, headers=headers)
-    #     fileset_allconsents_data = response.json()["data"]
+        ## get all-con files
+        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileAllConsents"
+        print( 'getting all-consent files from ' + request_url )
+        response = requests.get(request_url, headers=headers)
+        fileset_allconsents_data = response.json()["data"]
 
-    #     for file in fileset_allconsents_data:
-    #         fileset_allconsents_files_list.append(file)
+        for file in fileset_allconsents_data:
+            fileset_allconsents_files_list.append(file)
 
     ## get all the phenotype nodes for a dataset, to be entered when subject/sample nodes created below
     urltail = 'datasets'
@@ -333,15 +331,13 @@ for dataset in data['data']:
                                     current_subject_phenotypes_dict["sex"] = sex_transform(pnode)
 
                                 if pnode["phenotype"]["name"].lower() in ["race"]:
-                                    current_subject_phenotypes_dict["sex"] = race_transform(pnode)
+                                    current_subject_phenotypes_dict["race"] = race_transform(pnode)
 
                                 if pnode["phenotype"]["name"].lower() in ["ethnicity"]:
-                                    current_subject_phenotypes_dict["sex"] = ethnicity_transform(pnode)
+                                    current_subject_phenotypes_dict["ethnicity"] = ethnicity_transform(pnode)
 
                                 if pnode["phenotype"]["name"].lower() in ["dx", "diagnosis"]:
-                                    current_subject_phenotypes_dict["sex"] = dx_transform(pnode)
-
-                        print(current_subject_phenotypes_dict)
+                                    current_subject_phenotypes_dict["dx"] = dx_transform(pnode)
 
                         phenotype_obj = {
                             "APOE": current_subject_phenotypes_dict["apoe"], 
@@ -365,144 +361,144 @@ for dataset in data['data']:
             ## to fileset based on generated fileset GUID, [filsetaccno+type+filePK]
 
             ## was captured for dataset above as `fileset_data` so don't have to query for each consent
-            print('Creating filesets for ' + project_name)
-            for fileset in fileset_data:
-                fileset_id = fileset["id"]
-                fileset_description = fileset["description"]
-                # # accession not yet in API data so will fake
-                # # fileset_name = fileset.accession + "_" + c
-                fileset_name = fileset["accession"]+"_"+c
-                # # accession not yet in API data so will fake
-                # # fileset_submitter_id = fileset.accession + "_" + c
-                fileset_submitter_id = fileset["accession"]+"_"+c
+            # print('Creating filesets for ' + project_name)
+            # for fileset in fileset_data:
+            #     fileset_id = fileset["id"]
+            #     fileset_description = fileset["description"]
+            #     # # accession not yet in API data so will fake
+            #     # # fileset_name = fileset.accession + "_" + c
+            #     fileset_name = fileset["accession"]+"_"+c
+            #     # # accession not yet in API data so will fake
+            #     # # fileset_submitter_id = fileset.accession + "_" + c
+            #     fileset_submitter_id = fileset["accession"]+"_"+c
 
-                fileset_obj =  {
-                    "*projects": {
-                    "id": fetched_project_id
-                    }, 
-                    "*description": fileset_description, 
-                    "*fileset_name": fileset_name, 
-                    "*type": "fileset", 
-                    "*submitter_id": fileset_submitter_id
-                }
-                print(fileset_obj)
-                submitter.submit_record(program_name, project_name, fileset_obj)
+            #     fileset_obj =  {
+            #         "*projects": {
+            #         "id": fetched_project_id
+            #         }, 
+            #         "*description": fileset_description, 
+            #         "*fileset_name": fileset_name, 
+            #         "*type": "fileset", 
+            #         "*submitter_id": fileset_submitter_id
+            #     }
+            #     print(fileset_obj)
+            #     submitter.submit_record(program_name, project_name, fileset_obj)
             
-                ## Get sample-related files for each fileset while creating, 
-                ## first filtering on fileset_id (in fileset_sample_files_list object) == fileset_id
-                ## then by c (current consent)
-                for file in fileset_sample_files_list:
-                    if file["fileset_id"] == fileset_id and file["subject"]["consent"]["key"] == c:
-                        ##in DSS type=cram, index, etc., on datastage that is format
-                        file_format = file["type"]
-                        ##in datastage this is WGS, WES, etc., which is sample.assay in dss data
-                        file_type = file["sample"]["assay"]
-                        file_path = file["path"]
-                        file_name = file["name"]
-                        file_size = file["size"]
-                        file_id = file["id"]
-                        sample_key = file["sample"]["key"]
-                        cmc_submitter_id = project_name+"_core_metadata_collection"
-                        file_submitter_id = file_name + "_" + file_format + "_" + str(file_id)
-                        file_md5 = hashlib.md5( file_name + file_format + str(file_id) ).hexdigest()
+            #     ## Get sample-related files for each fileset while creating, 
+            #     ## first filtering on fileset_id (in fileset_sample_files_list object) == fileset_id
+            #     ## then by c (current consent)
+            #     for file in fileset_sample_files_list:
+            #         if file["fileset_id"] == fileset_id and file["subject"]["consent"]["key"] == c:
+            #             ##in DSS type=cram, index, etc., on datastage that is format
+            #             file_format = file["type"]
+            #             ##in datastage this is WGS, WES, etc., which is sample.assay in dss data
+            #             file_type = file["sample"]["assay"]
+            #             file_path = file["path"]
+            #             file_name = file["name"]
+            #             file_size = file["size"]
+            #             file_id = file["id"]
+            #             sample_key = file["sample"]["key"]
+            #             cmc_submitter_id = project_name+"_core_metadata_collection"
+            #             file_submitter_id = file_name + "_" + file_format + "_" + str(file_id)
+            #             file_md5 = hashlib.md5( file_name + file_format + str(file_id) ).hexdigest()
                         
-                        ## currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
-                        idlf_obj = {
-                            "*data_type": file_type, 
-                            "filesets": {
-                            "submitter_id": fileset_submitter_id
-                            }, 
-                            "*consent": c, 
-                            "core_metadata_collections": {
-                            "submitter_id": cmc_submitter_id
-                            }, 
-                            "*type": "individual_level_data_file", 
-                            "*file_path": file_path, 
-                            "*data_format": file_format, 
-                            "*file_name": file_name, 
-                            "*md5sum": file_md5, 
-                            "*file_size": file_size, 
-                            "*samples": {
-                            "submitter_id": sample_key
-                            }, 
-                            "*submitter_id": file_submitter_id
-                        }
-                        print("creating record for individual-related file:  " + file_submitter_id )
-                        submitter.submit_record(program_name, project_name, ildf_obj)
+            #             ## currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
+            #             idlf_obj = {
+            #                 "*data_type": file_type, 
+            #                 "filesets": {
+            #                 "submitter_id": fileset_submitter_id
+            #                 }, 
+            #                 "*consent": c, 
+            #                 "core_metadata_collections": {
+            #                 "submitter_id": cmc_submitter_id
+            #                 }, 
+            #                 "*type": "individual_level_data_file", 
+            #                 "*file_path": file_path, 
+            #                 "*data_format": file_format, 
+            #                 "*file_name": file_name, 
+            #                 "*md5sum": file_md5, 
+            #                 "*file_size": file_size, 
+            #                 "*samples": {
+            #                 "submitter_id": sample_key
+            #                 }, 
+            #                 "*submitter_id": file_submitter_id
+            #             }
+            #             print("creating record for individual-related file:  " + file_submitter_id )
+            #             submitter.submit_record(program_name, project_name, ildf_obj)
 
-                ## Get non-sample-related files for each fileset while creating, 
-                ## first filtering on fileSetId (in fileset_nonsample_files_list object) == fileset_id
-                ## then by c (current consent) == consent_key in the list
-                for file in fileset_nonsample_files_list:
-                    if file["fileSetId"] == fileset_id and file["consent_key"] == c:
-                        ##in DSS type=cram, index, etc., on datastage that is format
-                        ##file_type = ???? not in data (WGS WES etc.)... n/a for now
-                        file_type = 'n/a'
-                        file_size = file["size"]
-                        file_path = file["path"]
-                        file_name = file["name"]
-                        file_format = file["type"]
-                        file_id = file["id"]
-                        cmc_submitter_id = project_name + "_core_metadata_collection"
-                        file_submitter_id = file_name + "_" + file_format + "_" + str(file_id)
-                        file_md5 = hashlib.md5( file_name + file_format + str(file_id) ).hexdigest()
+            #     ## Get non-sample-related files for each fileset while creating, 
+            #     ## first filtering on fileSetId (in fileset_nonsample_files_list object) == fileset_id
+            #     ## then by c (current consent) == consent_key in the list
+            #     for file in fileset_nonsample_files_list:
+            #         if file["fileSetId"] == fileset_id and file["consent_key"] == c:
+            #             ##in DSS type=cram, index, etc., on datastage that is format
+            #             ##file_type = ???? not in data (WGS WES etc.)... n/a for now
+            #             file_type = 'n/a'
+            #             file_size = file["size"]
+            #             file_path = file["path"]
+            #             file_name = file["name"]
+            #             file_format = file["type"]
+            #             file_id = file["id"]
+            #             cmc_submitter_id = project_name + "_core_metadata_collection"
+            #             file_submitter_id = file_name + "_" + file_format + "_" + str(file_id)
+            #             file_md5 = hashlib.md5( file_name + file_format + str(file_id) ).hexdigest()
 
-                        aldf_object = {
-                            "*data_type": file_type, 
-                            "filesets": {
-                                "submitter_id": fileset_submitter_id
-                            }, 
-                            "*consent": c, 
-                            "core_metadata_collections": {
-                                "submitter_id": cmc_submitter_id
-                            }, 
-                            "*type": "aggregate_level_data_file", 
-                            "*file_path": file_path, 
-                            "*data_format": file_format, 
-                            "*md5sum": file_md5, 
-                            "*file_size": file_size, 
-                            "*submitter_id": file_submitter_id, 
-                            "*file_name": file_name
-                        }
+            #             aldf_object = {
+            #                 "*data_type": file_type, 
+            #                 "filesets": {
+            #                     "submitter_id": fileset_submitter_id
+            #                 }, 
+            #                 "*consent": c, 
+            #                 "core_metadata_collections": {
+            #                     "submitter_id": cmc_submitter_id
+            #                 }, 
+            #                 "*type": "aggregate_level_data_file", 
+            #                 "*file_path": file_path, 
+            #                 "*data_format": file_format, 
+            #                 "*md5sum": file_md5, 
+            #                 "*file_size": file_size, 
+            #                 "*submitter_id": file_submitter_id, 
+            #                 "*file_name": file_name
+            #             }
                         
-                        ## currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
+            #             ## currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
 
-                        print("creating record for non-sample file:  " + file_submitter_id )
-                        submitter.submit_record(program_name, project_name, aldf_obj)
+            #             print("creating record for non-sample file:  " + file_submitter_id )
+            #             submitter.submit_record(program_name, project_name, aldf_obj)
 
-                # Get all-con files for each fileset while creating, 
-                # first filtering on fileset_id (in fileset_allconsents_files_list object) == fileset_id
-                for file in fileset_allconsents_files_list:
-                    if file["fileset_id"] == fileset_id:
-                        file_format = file["type"]
-                        ##in datastage this is WGS, WES, etc., for allcons not in data and maybe not applicable, for now n/a
-                        file_type = 'n/a'
-                        file_path = file["path"]
-                        file_name = file["name"]
-                        file_size = file["size"]
-                        file_id = file["id"]
-                        cmc_submitter_id = project_name + "_core_metadata_collection"
-                        file_submitter_id = file_name + "_" + file_format + "_" + str(file_id)
-                        file_md5 = hashlib.md5( file_name + file_format + str(file_id)).hexdigest()
+            #     # Get all-con files for each fileset while creating, 
+            #     # first filtering on fileset_id (in fileset_allconsents_files_list object) == fileset_id
+            #     for file in fileset_allconsents_files_list:
+            #         if file["fileset_id"] == fileset_id:
+            #             file_format = file["type"]
+            #             ##in datastage this is WGS, WES, etc., for allcons not in data and maybe not applicable, for now n/a
+            #             file_type = 'n/a'
+            #             file_path = file["path"]
+            #             file_name = file["name"]
+            #             file_size = file["size"]
+            #             file_id = file["id"]
+            #             cmc_submitter_id = project_name + "_core_metadata_collection"
+            #             file_submitter_id = file_name + "_" + file_format + "_" + str(file_id)
+            #             file_md5 = hashlib.md5( file_name + file_format + str(file_id)).hexdigest()
                                         
-                        aldf_obj = {
-                            "*data_type": file_type, 
-                            "filesets": {
-                                "submitter_id": fileset_submitter_id
-                            }, 
-                            "*consent": c, 
-                            "core_metadata_collections": {
-                                "submitter_id": cmc_submitter_id
-                            }, 
-                            "*type": "aggregate_level_data_file", 
-                            "*file_path": file_path, 
-                            "*data_format": file_format, 
-                            "*md5sum": file_md5, 
-                            "*file_size": file_size, 
-                            "*submitter_id": file_submitter_id, 
-                            "*file_name": file_name
-                            }
+            #             aldf_obj = {
+            #                 "*data_type": file_type, 
+            #                 "filesets": {
+            #                     "submitter_id": fileset_submitter_id
+            #                 }, 
+            #                 "*consent": c, 
+            #                 "core_metadata_collections": {
+            #                     "submitter_id": cmc_submitter_id
+            #                 }, 
+            #                 "*type": "aggregate_level_data_file", 
+            #                 "*file_path": file_path, 
+            #                 "*data_format": file_format, 
+            #                 "*md5sum": file_md5, 
+            #                 "*file_size": file_size, 
+            #                 "*submitter_id": file_submitter_id, 
+            #                 "*file_name": file_name
+            #                 }
 
-                        print("creating record for all-consent file:  " + file_submitter_id )
-                        submitter.submit_record(program_name, project_name, aldf_obj)
+            #             print("creating record for all-consent file:  " + file_submitter_id )
+            #             submitter.submit_record(program_name, project_name, aldf_obj)
                     
