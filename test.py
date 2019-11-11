@@ -155,31 +155,64 @@ for dataset in data['data']:
         urltail = 'filesets'
 
         ## get sample-related files
-        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileSamples?includes=sample.subject.fullConsent"
+        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileSamples?includes=sample.subject.fullConsent&per_page=1000"
         print( 'getting sample files from ' + request_url )
         response = requests.get(request_url, headers=headers)
+        last_page = response.json()["meta"]["last_page"]
         fileset_sample_data = response.json()["data"]
 
         for file in fileset_sample_data:
             fileset_sample_files_list.append(file)
+        
+        if last_page > 1:
+            for page in range( last_page + 1 ):
+                if page < 2:
+                    continue
+                else:
+                    response = requests.get(request_url + "&page" + str(page), headers=headers)
+                    fileset_sample_data = response.json()["data"]
+                    for sample_file in fileset_sample_data:
+                        fileset_sample_files_list.append(sample_file)
 
         ## get non-sample files
-        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileNonSamples"
+        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileNonSamples&per_page=1000"
         print( 'getting non-sample files from ' + request_url )
         response = requests.get(request_url, headers=headers)
+        last_page = response.json()["meta"]["last_page"]
         fileset_nonsample_data = response.json()["data"]
 
         for file in fileset_nonsample_data:
             fileset_nonsample_files_list.append(file)
+       
+        if last_page > 1:
+            for page in range( last_page + 1 ):
+                if page < 2:
+                    continue
+                else:
+                    response = requests.get(request_url + "&page" + str(page), headers=headers)
+                    fileset_non_sample_data = response.json()["data"]
+                    for non_sample_file in fileset_non_sample_data:
+                        fileset_non_sample_files_list.append(non_sample_file)
 
         ## get all-con files
-        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileAllConsents"
+        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileAllConsents&per_page=1000"
         print( 'getting all-consent files from ' + request_url )
         response = requests.get(request_url, headers=headers)
+        last_page = response.json()["meta"]["last_page"]
         fileset_allconsents_data = response.json()["data"]
 
         for file in fileset_allconsents_data:
             fileset_allconsents_files_list.append(file)
+        
+        if last_page > 1:
+            for page in range( last_page + 1 ):
+                if page < 2:
+                    continue
+                else:
+                    response = requests.get(request_url + "&page" + str(page), headers=headers)
+                    fileset_allconsents_data = response.json()["data"]
+                    for all_consents_file in fileset_allconsents_data:
+                        fileset_allconsents_files_list.append(all_consents_file)
 
     ## get all the phenotype nodes for a dataset, to be entered when subject/sample nodes created below
     urltail = 'datasets'
@@ -360,7 +393,7 @@ for dataset in data['data']:
             ## return data's `sample.subject.consent.key`, create file nodes linked to sample based on `sample.key` and
             ## to fileset based on generated fileset GUID, [filsetaccno+type+filePK]
 
-            ## was captured for dataset above as `fileset_data` so don't have to query for each consent
+            ## program-level fileset data was retrieved for dataset above as `fileset_data` so don't have to query for each consent
             # print('Creating filesets for ' + project_name)
             # for fileset in fileset_data:
             #     fileset_id = fileset["id"]
