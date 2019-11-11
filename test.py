@@ -35,26 +35,84 @@ def apoe_tranform(pnode):
     accepted_values = ["22", "23", "24", "33", "34", "44", "na"]
     if pnode["value"] in accepted_values:
         return pnode["value"]
+    else:
+        return 'na'
 
 def sex_transform(pnode):
     print('in sex transform')
     # print(pnode)
     p = pnode["value"]
-    ## derived value
-    dv = ''
-    accepted_values = ["male", "female"]
     p_dict = json.loads(pnode["phenotype"]["values"])
+    accepted_values = ["male", "female"]
 
     if p_dict[str(p)] in accepted_values:
-        dv = value.lower()
+        ## derived value
+        dv = p_dict[str(p)].lower()
 
     return dv    
 
+def race_transform(pnode):
+    print('in race transform')
+    p = pnode["value"]
+    p_dict = json.loads(pnode["phenotype"]["values"])
+
+    accepted_values = ["american indian/alaska native", "asian", "black or african american", "native hawaiian or other pacific islander", "other", "white", "na"]
+    
+    if p_dict[str(p)] in accepted_values:
+        dv = p_dict[str(p)].lower()
+    else:
+        dv = 'na'
+
+    return dv
+
+def ethnicity_transform(pnode):
+    print('in ethnicity transform')
+    p = pnode["value"]
+    p_dict = json.loads(pnode["phenotype"]["values"])
+
+    accepted_values = ["hispanic or latino", "not hispanic or latino", "not applicable/not available"]
+
+    if p_dict[str(p)] in accepted_values:
+        dv = p_dict[str(p)].lower()
+    else:
+        dv = 'na'
+    
+    return dv
+
+def dx_transform(pnode):
+    print('in dx transform')
+    p = pnode["value"]
+    p_dict = json.loads(pnode["phenotype"]["values"])
+
+    ## will have to be changed to a calculation or something correct?
+    accepted_values = [
+                    "ad at most recent visit",
+                    "definite ad",
+                    "family reported ad",
+                    "family reported no ad",
+                    "incident ad",
+                    "mci at most recent visit",
+                    "na",
+                    "unknown",
+                    "no ad or mci at most recent visit",
+                    "no dementia",
+                    "no prevalent or incident ad",
+                    "other dementia",
+                    "possible ad",
+                    "prevalent ad",
+                    "probable ad"
+                ]
+
+    if p_dict[str(p)] in accepted_values:
+        dv = p_dict[str(p)].lower()
+    else:
+        dv = 'na'
+    
+    return dv
 
 
 
 ## how to add to base string
-
 ## APIURL+urltail"/1/subjects 
 
 response = requests.get(APIURL+urltail, headers=headers)
@@ -266,15 +324,21 @@ for dataset in data['data']:
                             if pnode["subject"]["key"] == current_subject_id:
                                 # print(pnode["phenotype"]["name"]+": "+pnode["value"]) = phenotype: phenotype value
                                 ## these are our five 'core-harmonized' phenotypes that need to be sought out
-                                current_subject_phenotypes_dict["race"] = ''
-                                current_subject_phenotypes_dict["ethnicity"] = ''
-                                current_subject_phenotypes_dict["dx"] = ''
 
                                 if pnode["phenotype"]["name"].lower() == "apoe":
                                     current_subject_phenotypes_dict["apoe"] = apoe_tranform(pnode)
                                 
                                 if pnode["phenotype"]["name"].lower() in ["sex", "gender"]:
                                     current_subject_phenotypes_dict["sex"] = sex_transform(pnode)
+
+                                if pnode["phenotype"]["name"].lower() in ["race"]:
+                                    current_subject_phenotypes_dict["sex"] = race_transform(pnode)
+
+                                if pnode["phenotype"]["name"].lower() in ["ethnicity"]:
+                                    current_subject_phenotypes_dict["sex"] = ethnicity_transform(pnode)
+
+                                if pnode["phenotype"]["name"].lower() in ["dx", "diagnosis"]:
+                                    current_subject_phenotypes_dict["sex"] = dx_transform(pnode)
 
                         print(current_subject_phenotypes_dict)
 
