@@ -1,3 +1,16 @@
+## project
+{
+  "last_release_date": null, 
+  "type": "program", 
+  "summary_description": null, 
+  "dataset_url": null, 
+  "version": null, 
+  "*release_name": null, 
+  "*name": null, 
+  "*dbgap_accession_number": null
+}
+
+
 ## fileset
 {
     "last_release_date": null, 

@@ -29,7 +29,7 @@ auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 
 submitter = Gen3Submission(endpoint, auth)
 
-## functions to transform phenotypes
+## transform/builder function 
 def apoe_tranform(pnode):
     accepted_values = ["22", "23", "24", "33", "34", "44", "na"]
     if pnode["value"] in accepted_values:
@@ -109,6 +109,15 @@ def dx_transform(pnode):
     
     return dv
 
+def build_dataset_url(dataset_name):
+    dataset_url_base = "https://dss.naigads.org/datasets/"
+
+    if " " in dataset_name:
+        dn = dataset_name.replace(" ", "-")
+        return dataset_url_base + dn.lower() + "/"
+    else:
+        return dataset_url_base + dataset_name.lower()
+
 
 ## how to add to base string
 ## APIURL+urltail"/1/subjects 
@@ -122,17 +131,20 @@ for dataset in data['data']:
     program_name = dataset["accession"]
     program_description = dataset["description"]
     dss_dataset_id = dataset["id"]
+    program_url = build_dataset_url(program_release_name)
         
     program_obj = {
         "type": "program",
         "dbgap_accession_number": program_dbgap,
         "name": program_name,
         "release_name": program_release_name,
-        "summary_description": program_description
+        "summary_description": program_description,
+          "dataset_url": program_url, 
     }
 
     ## create programs from dataset list
     print( "creating program node for " + program_dbgap )
+    print(program_obj)
     submitter.create_program(program_obj)
     ## get guid for program based on program_name, store as fetched_id to link subjects, filesets, core_metadata_collections
     query = '{program(name:\"%s\"){id}}' % program_name
