@@ -48,14 +48,15 @@ for dataset in data['data']:
         "release_name": program_release_name,
         "summary_description": program_description
     }
-    # create programs from dataset list
+
+    ## create programs from dataset list
     print( "creating program node for " + program_dbgap )
     submitter.create_program(program_obj)
-    # get guid for program based on program_name, store as fetched_id to link subjects, filesets, core_metadata_collections
+    ## get guid for program based on program_name, store as fetched_id to link subjects, filesets, core_metadata_collections
     query = '{program(name:\"%s\"){id}}' % program_name
 
     fetched_program_id = submitter.query(query)["data"]["program"][0]["id"]
-    ## get all the filesets for a dataset, to be used later
+    # ## get all the filesets for a dataset, to be used later
     urltail = 'datasets'
     request_url = APIURL+urltail+"/"+str(dss_dataset_id)+"/filesets"
     print('Getting fileset data from ' + request_url)
@@ -345,9 +346,9 @@ for dataset in data['data']:
                         print("creating record for individual-related file:  " + file_submitter_id )
                         submitter.submit_record(program_name, project_name, ildf_obj)
 
-                # Get non-sample-related files for each fileset while creating, 
-                # first filtering on fileSetId (in fileset_nonsample_files_list object) == fileset_id
-                # then by c (current consent) == consent_key in the list
+                ## Get non-sample-related files for each fileset while creating, 
+                ## first filtering on fileSetId (in fileset_nonsample_files_list object) == fileset_id
+                ## then by c (current consent) == consent_key in the list
                 for file in fileset_nonsample_files_list:
                     if file["fileSetId"] == fileset_id and file["consent_key"] == c:
                         ##in DSS type=cram, index, etc., on datastage that is format
