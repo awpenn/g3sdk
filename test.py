@@ -132,7 +132,8 @@ for dataset in data['data']:
     program_description = dataset["description"]
     dss_dataset_id = dataset["id"]
     program_url = build_dataset_url(program_release_name)
-        
+    
+    ## AW- production will have latest_release as a variable
     program_obj = {
         "type": "program",
         "dbgap_accession_number": program_dbgap,
@@ -369,6 +370,7 @@ for dataset in data['data']:
                                 # print(pnode["phenotype"]["name"]+": "+pnode["value"]) = phenotype: phenotype value
                                 ## these are our five 'core-harmonized' phenotypes that need to be sought out
 
+                                ## AW- add 'condition' as variable and change dx to 'study-specific diagnosis' 
                                 if pnode["phenotype"]["name"].lower() == "apoe":
                                     current_subject_phenotypes_dict["apoe"] = apoe_tranform(pnode)
                                 
@@ -447,7 +449,8 @@ for dataset in data['data']:
             #             file_submitter_id = file_name + "_" + file_format + "_" + str(file_id)
             #             file_md5 = hashlib.md5( file_name + file_format + str(file_id) ).hexdigest()
                         
-            #             ## currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
+            #             ## AW- currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
+             
             #             idlf_obj = {
             #                 "*data_type": file_type, 
             #                 "filesets": {
@@ -488,6 +491,7 @@ for dataset in data['data']:
             #             file_submitter_id = file_name + "_" + file_format + "_" + str(file_id)
             #             file_md5 = hashlib.md5( file_name + file_format + str(file_id) ).hexdigest()
 
+                         ## AW- currently missing data_type, ref_build, data_category(genotype, expression, etc.) because not in DSS data
             #             aldf_object = {
             #                 "*data_type": file_type, 
             #                 "filesets": {
@@ -506,7 +510,6 @@ for dataset in data['data']:
             #                 "*file_name": file_name
             #             }
                         
-            #             ## currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
 
             #             print("creating record for non-sample file:  " + file_submitter_id )
             #             submitter.submit_record(program_name, project_name, aldf_obj)
@@ -525,7 +528,9 @@ for dataset in data['data']:
             #             cmc_submitter_id = project_name + "_core_metadata_collection"
             #             file_submitter_id = file_name + "_" + file_format + "_" + str(file_id)
             #             file_md5 = hashlib.md5( file_name + file_format + str(file_id)).hexdigest()
-                                        
+                            
+                         ## AW- currently missing data_type, ref_build, data_category(genotype, expression, etc.) because not in DSS data
+
             #             aldf_obj = {
             #                 "*data_type": file_type, 
             #                 "filesets": {
