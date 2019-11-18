@@ -43,11 +43,7 @@ def sex_transform(pnode):
     p_dict = json.loads(pnode["phenotype"]["values"])
     accepted_values = ["male", "female"]
 
-    if p_dict[str(p)] in accepted_values:
-        ## derived value
-        dv = p_dict[str(p)].lower()
-
-    return dv    
+    return p    
 
 def race_transform(pnode):
 
@@ -55,13 +51,9 @@ def race_transform(pnode):
     p_dict = json.loads(pnode["phenotype"]["values"])
 
     accepted_values = ["american indian/alaska native", "asian", "black or african american", "native hawaiian or other pacific islander", "other", "white", "na"]
-    
-    if p_dict[str(p)] in accepted_values:
-        dv = p_dict[str(p)].lower()
-    else:
-        dv = 'na'
 
-    return dv
+
+    return p
 
 def ethnicity_transform(pnode):
 
@@ -69,13 +61,8 @@ def ethnicity_transform(pnode):
     p_dict = json.loads(pnode["phenotype"]["values"])
 
     accepted_values = ["hispanic or latino", "not hispanic or latino", "not applicable/not available"]
-
-    if p_dict[str(p)] in accepted_values:
-        dv = p_dict[str(p)].lower()
-    else:
-        dv = 'not applicable/not available'
     
-    return dv
+    return p
 
 def dx_transform(pnode):
     p = pnode["value"]
@@ -88,8 +75,8 @@ def dx_transform(pnode):
                     "unknown"
                 ]
 
-    if p_dict[str(p)] in accepted_values:
-        dv = p_dict[str(p)].lower()
+    if "ad" in p:
+        dv = 'case'
     else:
         dv = 'unknown'
     
@@ -98,10 +85,8 @@ def dx_transform(pnode):
 def disease_transform(pnode):
     p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
-
-    dv = p_dict[str(p)].lower()
     
-    return dv
+    return p
 
 def build_dataset_url(dataset_name):
     dataset_url_base = "https://dss.naigads.org/datasets/"
@@ -147,79 +132,79 @@ for dataset in dataset_data:
     fetched_program_id = submitter.query(query)["data"]["program"][0]["id"]
     # ## get all the filesets for a dataset, to be used later
     urltail = 'datasets'
-    request_url = APIURL+urltail+"/"+str(dss_dataset_id)+"/filesets"
-    print('Getting fileset data from ' + request_url)
-    response = requests.get(request_url, headers=headers)
-    fileset_data = response.json()["data"]
+    # request_url = APIURL+urltail+"/"+str(dss_dataset_id)+"/filesets"
+    # print('Getting fileset data from ' + request_url)
+    # response = requests.get(request_url, headers=headers)
+    # fileset_data = response.json()["data"]
     
-    # make lists with fileset sample non-sample, and all-con files
-    fileset_sample_files_list = []
-    fileset_nonsample_files_list = []
-    fileset_allconsents_files_list = []
+    # # make lists with fileset sample non-sample, and all-con files
+    # fileset_sample_files_list = []
+    # fileset_nonsample_files_list = []
+    # fileset_allconsents_files_list = []
 
 
-    for fileset in fileset_data:
-        urltail = 'filesets'
+    # for fileset in fileset_data:
+    #     urltail = 'filesets'
 
-        ## get sample-related files
-        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileSamples?includes=sample.subject.fullConsent&per_page=1000"
-        print( 'getting sample files from ' + request_url )
-        response = requests.get(request_url, headers=headers)
-        last_page = response.json()["meta"]["last_page"]
-        fileset_sample_data = response.json()["data"]
+    #     ## get sample-related files
+    #     request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileSamples?includes=sample.subject.fullConsent&per_page=1000"
+    #     print( 'getting sample files from ' + request_url )
+    #     response = requests.get(request_url, headers=headers)
+    #     last_page = response.json()["meta"]["last_page"]
+    #     fileset_sample_data = response.json()["data"]
 
-        for file in fileset_sample_data:
-            fileset_sample_files_list.append(file)
+    #     for file in fileset_sample_data:
+    #         fileset_sample_files_list.append(file)
         
-        if last_page > 1:
-            for page in range( last_page + 1 ):
-                if page < 2:
-                    continue
-                else:
-                    response = requests.get(request_url + "&page" + str(page), headers=headers)
-                    fileset_sample_data = response.json()["data"]
-                    for sample_file in fileset_sample_data:
-                        fileset_sample_files_list.append(sample_file)
+    #     if last_page > 1:
+    #         for page in range( last_page + 1 ):
+    #             if page < 2:
+    #                 continue
+    #             else:
+    #                 response = requests.get(request_url + "&page" + str(page), headers=headers)
+    #                 fileset_sample_data = response.json()["data"]
+    #                 for sample_file in fileset_sample_data:
+    #                     fileset_sample_files_list.append(sample_file)
 
-        ## get non-sample files
-        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileNonSamples&per_page=1000"
-        print( 'getting non-sample files from ' + request_url )
-        response = requests.get(request_url, headers=headers)
-        last_page = response.json()["meta"]["last_page"]
-        fileset_nonsample_data = response.json()["data"]
+    #     ## get non-sample files
+    #     request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileNonSamples&per_page=1000"
+    #     print( 'getting non-sample files from ' + request_url )
+    #     response = requests.get(request_url, headers=headers)
+    #     last_page = response.json()["meta"]["last_page"]
+    #     fileset_nonsample_data = response.json()["data"]
 
-        for file in fileset_nonsample_data:
-            fileset_nonsample_files_list.append(file)
+    #     for file in fileset_nonsample_data:
+    #         fileset_nonsample_files_list.append(file)
        
-        if last_page > 1:
-            for page in range( last_page + 1 ):
-                if page < 2:
-                    continue
-                else:
-                    response = requests.get(request_url + "&page" + str(page), headers=headers)
-                    fileset_non_sample_data = response.json()["data"]
-                    for non_sample_file in fileset_non_sample_data:
-                        fileset_non_sample_files_list.append(non_sample_file)
+    #     if last_page > 1:
+    #         for page in range( last_page + 1 ):
+    #             if page < 2:
+    #                 continue
+    #             else:
+    #                 response = requests.get(request_url + "&page" + str(page), headers=headers)
+    #                 fileset_non_sample_data = response.json()["data"]
+    #                 for non_sample_file in fileset_non_sample_data:
+    #                     fileset_non_sample_files_list.append(non_sample_file)
 
-        ## get all-con files
-        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileAllConsents&per_page=1000"
-        print( 'getting all-consent files from ' + request_url )
-        response = requests.get(request_url, headers=headers)
-        last_page = response.json()["meta"]["last_page"]
-        fileset_allconsents_data = response.json()["data"]
+    #     ## get all-con files
+    #     request_url = APIURL+urltail+"/"+str(fileset["id"])+"/"+"fileAllConsents&per_page=1000"
+    #     print( 'getting all-consent files from ' + request_url )
+    #     response = requests.get(request_url, headers=headers)
+    #     last_page = response.json()["meta"]["last_page"]
+    #     fileset_allconsents_data = response.json()["data"]
 
-        for file in fileset_allconsents_data:
-            fileset_allconsents_files_list.append(file)
+    #     for file in fileset_allconsents_data:
+    #         fileset_allconsents_files_list.append(file)
         
-        if last_page > 1:
-            for page in range( last_page + 1 ):
-                if page < 2:
-                    continue
-                else:
-                    response = requests.get(request_url + "&page" + str(page), headers=headers)
-                    fileset_allconsents_data = response.json()["data"]
-                    for all_consents_file in fileset_allconsents_data:
-                        fileset_allconsents_files_list.append(all_consents_file)
+    #     if last_page > 1:
+    #         for page in range( last_page + 1 ):
+    #             if page < 2:
+    #                 continue
+    #             else:
+    #                 response = requests.get(request_url + "&page" + str(page), headers=headers)
+    #                 fileset_allconsents_data = response.json()["data"]
+    #                 for all_consents_file in fileset_allconsents_data:
+    #                     fileset_allconsents_files_list.append(all_consents_file)
 
     ## get all the phenotype nodes for a dataset, to be entered when subject/sample nodes created below
     urltail = 'datasets'
@@ -376,8 +361,7 @@ for dataset in dataset_data:
                                 if pnode["phenotype"]["name"].lower() in ["dx", "diagnosis"]:
                                     current_subject_phenotypes_dict["study_specific_diagnosis"] = dx_transform(pnode)
 
-                                if pnode["phenotype"]["name"].lower() in ["disease"]:
-                                    current_subject_phenotypes_dict["disease"] = disease_transform(pnode)
+                                current_subject_phenotypes_dict["disease"] = "AD"
 
                         phenotype_obj = {
                             "APOE": current_subject_phenotypes_dict["apoe"], 
