@@ -32,14 +32,17 @@ urltail = 'sampleSets'
 print( APIURL+urltail+"/1/samples?includes=subject.fullConsent")
 response = requests.get(APIURL+urltail+"/1/samples?includes=subject.fullConsent", headers=headers)
 sample_set_data = response.json()["data"]
-
+sample_dict = {}
 ## merges multiple dictionaries into one list of dictionaries
-for dictionary in sample_set_data:
-    for sample in dictionary:
-        sample_dict[sample["key"]] = sample
+for sample in sample_set_data:
+    sample_dict[sample["key"]] = sample
+
+
+print(len(sample_dict))
 # for key, dictionary in response.json().iteritems():
-#     for sample in dictionary:
-#         sample_dict[sample["key"]] = sample
+#     print(dictionary)
+    # for sample in dictionary:
+    #     sample_dict[sample["key"]] = sample
 
 # urltail = 'datasets'
 # request_url = APIURL+urltail+"/"+str(1)+"/subjectPhenotypes?includes=phenotype,subject&per_page=11000"

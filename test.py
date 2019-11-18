@@ -39,8 +39,7 @@ def apoe_tranform(pnode):
 
 def sex_transform(pnode):
     # print(pnode)
-    p = 0
-    # p = pnode["value"]
+    p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
     accepted_values = ["male", "female"]
 
@@ -51,8 +50,8 @@ def sex_transform(pnode):
     return dv    
 
 def race_transform(pnode):
-    p = 0
-    # p = pnode["value"]
+
+    p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
 
     accepted_values = ["american indian/alaska native", "asian", "black or african american", "native hawaiian or other pacific islander", "other", "white", "na"]
@@ -65,8 +64,8 @@ def race_transform(pnode):
     return dv
 
 def ethnicity_transform(pnode):
-    p = 0
-    # p = pnode["value"]
+
+    p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
 
     accepted_values = ["hispanic or latino", "not hispanic or latino", "not applicable/not available"]
@@ -79,33 +78,28 @@ def ethnicity_transform(pnode):
     return dv
 
 def dx_transform(pnode):
-    p = 0
-    # p = pnode["value"]
+    p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
 
-    ## will have to be changed to a calculation or something correct?
     accepted_values = [
-                    "ad at most recent visit",
-                    "definite ad",
-                    "family reported ad",
-                    "family reported no ad",
-                    "incident ad",
-                    "mci at most recent visit",
-                    "na",
-                    "unknown",
-                    "no ad or mci at most recent visit",
-                    "no dementia",
-                    "no prevalent or incident ad",
-                    "other dementia",
-                    "possible ad",
-                    "prevalent ad",
-                    "probable ad"
+                    "case",
+                    "control",
+                    "other",
+                    "unknown"
                 ]
 
     if p_dict[str(p)] in accepted_values:
         dv = p_dict[str(p)].lower()
     else:
-        dv = 'na'
+        dv = 'unknown'
+    
+    return dv
+
+def disease_transform(pnode):
+    p = pnode["value"]
+    p_dict = json.loads(pnode["phenotype"]["values"])
+
+    dv = p_dict[str(p)].lower()
     
     return dv
 
@@ -140,7 +134,7 @@ for dataset in dataset_data:
         "name": program_name,
         "release_name": program_release_name,
         "summary_description": program_description,
-          "dataset_url": program_url, 
+        "dataset_url": program_url, 
     }
 
     ## create programs from dataset list
@@ -158,12 +152,12 @@ for dataset in dataset_data:
     response = requests.get(request_url, headers=headers)
     fileset_data = response.json()["data"]
     
-    ## make lists with fileset sample non-sample, and all-con files
+    # make lists with fileset sample non-sample, and all-con files
     fileset_sample_files_list = []
     fileset_nonsample_files_list = []
     fileset_allconsents_files_list = []
 
-    # will probably have to change this below because the response will have to be paginated
+
     for fileset in fileset_data:
         urltail = 'filesets'
 
@@ -265,15 +259,12 @@ for dataset in dataset_data:
         urltail = 'sampleSets'
         print( APIURL+urltail+"/"+str(sample_set["id"])+"/samples?includes=subject.fullConsent" )
         response = requests.get(APIURL+urltail+"/"+str(sample_set["id"])+"/samples?includes=subject.fullConsent", headers=headers)
-
+        sample_set_subject_data = response.json()["data"]
         ## merges multiple dictionaries into one list of dictionaries
-        for key, dictionary in response.json().iteritems():
-            for sample in dictionary:
-                sample_dict[sample["key"]] = sample
-             
+        for sample in sample_set_subject_data:
+            sample_dict[sample["key"]] = sample
     ## sample dict after this for loop will be all the samples for a dataset (some subjects have multi samples 4870 subj/4909 sample in dev server)
     ## sample_set is set of unique subject_ids in the sample_dict
-
     
     ## get a list of consents for the dataset
     dataset_consents = []
@@ -344,7 +335,7 @@ for dataset in dataset_data:
                             "type": "subject", 
                             "submitter_id": subject["key"]
                         }
-                        print( "creating subject record for " + subject["key"] )
+                        print( "creating subject record " + subject["key"] )
                         submitter.submit_record(program_name, project_name, subject_obj)
 
                         ## create a sample node for each passing through here while we're at it
@@ -370,7 +361,6 @@ for dataset in dataset_data:
                                 # print(pnode["phenotype"]["name"]+": "+pnode["value"]) = phenotype: phenotype value
                                 ## these are our five 'core-harmonized' phenotypes that need to be sought out
 
-                                ## AW- add 'condition' as variable and change dx to 'study-specific diagnosis' 
                                 if pnode["phenotype"]["name"].lower() == "apoe":
                                     current_subject_phenotypes_dict["apoe"] = apoe_tranform(pnode)
                                 
@@ -384,7 +374,10 @@ for dataset in dataset_data:
                                     current_subject_phenotypes_dict["ethnicity"] = ethnicity_transform(pnode)
 
                                 if pnode["phenotype"]["name"].lower() in ["dx", "diagnosis"]:
-                                    current_subject_phenotypes_dict["dx"] = dx_transform(pnode)
+                                    current_subject_phenotypes_dict["study_specific_diagnosis"] = dx_transform(pnode)
+
+                                if pnode["phenotype"]["name"].lower() in ["disease"]:
+                                    current_subject_phenotypes_dict["disease"] = disease_transform(pnode)
 
                         phenotype_obj = {
                             "APOE": current_subject_phenotypes_dict["apoe"], 
@@ -394,12 +387,14 @@ for dataset in dataset_data:
                             }, 
                             "race": current_subject_phenotypes_dict["race"], 
                             "type": "phenotype", 
-                            "diagnosis": current_subject_phenotypes_dict["dx"], 
+                            "study_specific_diagnosis": current_subject_phenotypes_dict["study_specific_diagnosis"], 
+                            "disease": current_subject_phenotypes_dict["disease"], 
                             "submitter_id": current_subject_id + "_pheno", 
                             "ethnicity": current_subject_phenotypes_dict["ethnicity"]
                         }
 
                         print("creating phenotype record for " + current_subject_id)
+                        print(phenotype_obj)
                         submitter.submit_record(program_name, project_name, phenotype_obj)
             ## once all the subject, sample, and phenotype records for a project are created, create a fileset_[consent_level]
             ## node corresponding to current project (consent level) for each fileset in the program (dataset), query for the files
