@@ -28,75 +28,87 @@ auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 
 submitter = Gen3Submission(endpoint, auth)
 
+urltail = 'sampleSets'
+print( APIURL+urltail+"/1/samples?includes=subject.fullConsent")
+response = requests.get(APIURL+urltail+"/1/samples?includes=subject.fullConsent", headers=headers)
+sample_set_data = response.json()["data"]
 
-urltail = 'datasets'
-request_url = APIURL+urltail+"/"+str(1)+"/subjectPhenotypes?includes=phenotype,subject&per_page=11000"
-response = requests.get(request_url, headers=headers)
-last_page = response.json()["meta"]["last_page"]
-phenotype_data = response.json()["data"]
+## merges multiple dictionaries into one list of dictionaries
+for dictionary in sample_set_data:
+    for sample in dictionary:
+        sample_dict[sample["key"]] = sample
+# for key, dictionary in response.json().iteritems():
+#     for sample in dictionary:
+#         sample_dict[sample["key"]] = sample
 
-    ## this list is all the phenotype nodes from all the pages
-print( "creating phenotype list for dataset " + str(1) )
-print( "api returning %s page(s) of phenotypes" % str(last_page) ) 
-project_phenotype_list = []
+# urltail = 'datasets'
+# request_url = APIURL+urltail+"/"+str(1)+"/subjectPhenotypes?includes=phenotype,subject&per_page=11000"
+# response = requests.get(request_url, headers=headers)
+# last_page = response.json()["meta"]["last_page"]
+# phenotype_data = response.json()["data"]
 
-for phenotype in phenotype_data:
-    project_phenotype_list.append(phenotype)
+#     ## this list is all the phenotype nodes from all the pages
+# print( "creating phenotype list for dataset " + str(1) )
+# print( "api returning %s page(s) of phenotypes" % str(last_page) ) 
+# project_phenotype_list = []
 
-if last_page > 1:
-    for page in range( last_page + 1 ):
-        if page < 2:
-            continue
-        else:
-            response = requests.get(request_url+"&page="+str(page), headers=headers)
-            phenotype_data = response.json()["data"]
-            for phenotype in phenotype_data:
-                project_phenotype_list.append(phenotype)
+# for phenotype in phenotype_data:
+#     project_phenotype_list.append(phenotype)
+
+# if last_page > 1:
+#     for page in range( last_page + 1 ):
+#         if page < 2:
+#             continue
+#         else:
+#             response = requests.get(request_url+"&page="+str(page), headers=headers)
+#             phenotype_data = response.json()["data"]
+#             for phenotype in phenotype_data:
+#                 project_phenotype_list.append(phenotype)
 
 
-dropped_pheno_subjects = []
+# dropped_pheno_subjects = []
 
-with open("jsondumps/subjects-pheno-dropped.json", "r") as json_file:
-    data = json.load(json_file)
+# with open("jsondumps/subjects-pheno-dropped.json", "r") as json_file:
+#     data = json.load(json_file)
 
-    for subject in data:
-        dropped_pheno_subjects.append(subject["submitter_id"])
+#     for subject in data:
+#         dropped_pheno_subjects.append(subject["submitter_id"])
 
-    for subject in dropped_pheno_subjects:
-        current_subject_phenotypes_dict = {}
+#     for subject in dropped_pheno_subjects:
+#         current_subject_phenotypes_dict = {}
 
-        for pnode in project_phenotype_list:
-            if pnode["subject"]["key"] == subject:
-                                        # print(pnode["phenotype"]["name"]+": "+pnode["value"]) = phenotype: phenotype value
+#         for pnode in project_phenotype_list:
+#             if pnode["subject"]["key"] == subject:
+#                                         # print(pnode["phenotype"]["name"]+": "+pnode["value"]) = phenotype: phenotype value
 
-                if pnode["phenotype"]["name"] == 'apoe':
-                    current_subject_phenotypes_dict["apoe"] = pnode["value"]
+#                 if pnode["phenotype"]["name"] == 'apoe':
+#                     current_subject_phenotypes_dict["apoe"] = pnode["value"]
 
-                if pnode["phenotype"]["name"] == 'sex':
-                    current_subject_phenotypes_dict["sex"] = pnode["value"]
+#                 if pnode["phenotype"]["name"] == 'sex':
+#                     current_subject_phenotypes_dict["sex"] = pnode["value"]
 
-                if pnode["phenotype"]["name"] == 'race':
-                    current_subject_phenotypes_dict["race"] = pnode["value"]
+#                 if pnode["phenotype"]["name"] == 'race':
+#                     current_subject_phenotypes_dict["race"] = pnode["value"]
 
-                if pnode["phenotype"]["name"] == 'ethnicity':
-                    current_subject_phenotypes_dict["ethnicity"] = pnode["value"]
+#                 if pnode["phenotype"]["name"] == 'ethnicity':
+#                     current_subject_phenotypes_dict["ethnicity"] = pnode["value"]
 
-                if pnode["phenotype"]["name"] == 'dx':
-                    current_subject_phenotypes_dict["dx"] = pnode["value"]
+#                 if pnode["phenotype"]["name"] == 'dx':
+#                     current_subject_phenotypes_dict["dx"] = pnode["value"]
 
-        phenotype_obj = {
-            "APOE": current_subject_phenotypes_dict["apoe"], 
-            "sex": current_subject_phenotypes_dict["sex"], 
-            "subjects": {
-                "submitter_id": subject
-            }, 
-            "race": current_subject_phenotypes_dict["race"], 
-            "type": "phenotype", 
-            "diagnosis": current_subject_phenotypes_dict["dx"], 
-            "submitter_id": subject + "_pheno", 
-            "ethnicity": current_subject_phenotypes_dict["ethnicity"]
-        }
+#         phenotype_obj = {
+#             "APOE": current_subject_phenotypes_dict["apoe"], 
+#             "sex": current_subject_phenotypes_dict["sex"], 
+#             "subjects": {
+#                 "submitter_id": subject
+#             }, 
+#             "race": current_subject_phenotypes_dict["race"], 
+#             "type": "phenotype", 
+#             "diagnosis": current_subject_phenotypes_dict["dx"], 
+#             "submitter_id": subject + "_pheno", 
+#             "ethnicity": current_subject_phenotypes_dict["ethnicity"]
+#         }
 
-        print("record for " + subject)
-        print(phenotype_obj)
-        # submitter.submit_record("NG00067", "NG00067_DS-DEMND-IRB-PUB-NPU", phenotype_obj)
+#         print("record for " + subject)
+#         print(phenotype_obj)
+#         # submitter.submit_record("NG00067", "NG00067_DS-DEMND-IRB-PUB-NPU", phenotype_obj)

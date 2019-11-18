@@ -124,8 +124,8 @@ def build_dataset_url(dataset_name):
 
 response = requests.get(APIURL+urltail, headers=headers)
 # response.json() produces a dictionary
-data = response.json()
-for dataset in data['data']:
+dataset_data = response.json()['data']
+for dataset in dataset_data:
     program_release_name = dataset["name"]
     program_dbgap = dataset["accession"]
     program_name = dataset["accession"]
