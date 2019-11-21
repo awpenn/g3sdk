@@ -179,7 +179,6 @@ for dataset in dataset_data:
         else:
             print('no sample files, moving on...')
 
-        print(str(len(fileset_sample_files_list)) + " sample file(s) retrieved.")
         ## get non-sample files
         ## have to see first if there are nonSample files
         request_url = APIURL+urltail+"/"+str(fileset["id"])+"/fileNonSamples"
@@ -239,7 +238,11 @@ for dataset in dataset_data:
                             fileset_allconsents_files_list.append(all_consents_file)
         else:
             print('no all-consent files, moving on...')
-
+    
+    print(str(len(fileset_sample_files_list)) + " sample file(s) retrieved total for dataset " + str(dss_dataset_id))
+    print(str(len(fileset_nonsample_files_list)) + " nonsample file(s) retrieved total for dataset " + str(dss_dataset_id))
+    print(str(len(fileset_allconsents_files_list)) + " allconsent file(s) retrieved total for dataset " + str(dss_dataset_id))
+    print('-------fileset loop--------')
     ## get all the phenotype nodes for a dataset, to be entered when subject/sample nodes created below
     urltail = 'datasets'
     request_url = APIURL+urltail+"/"+str(dss_dataset_id)+"/subjectPhenotypes?includes=phenotype,subject&per_page=11000"
@@ -261,6 +264,7 @@ for dataset in dataset_data:
                 continue
             else:
                 response = requests.get(request_url+"&page="+str(page), headers=headers)
+                print('phenotypes from this string ' + request_url+"&page="+str(page))
                 phenotype_data = response.json()["data"]
                 for phenotype in phenotype_data:
                     project_phenotype_list.append(phenotype)
@@ -273,15 +277,45 @@ for dataset in dataset_data:
     sample_set_data = response.json()["data"]
     
     sample_dict = {}
-
+    print('these are in sample set data')
+    print(sample_set_data)
     for sample_set in sample_set_data:    
         urltail = 'sampleSets'
-        print( APIURL+urltail+"/"+str(sample_set["id"])+"/samples?includes=subject.fullConsent" )
-        response = requests.get(APIURL+urltail+"/"+str(sample_set["id"])+"/samples?includes=subject.fullConsent", headers=headers)
-        sample_set_subject_data = response.json()["data"]
-        ## merges multiple dictionaries into one list of dictionaries
-        for sample in sample_set_subject_data:
-            sample_dict[sample["key"]] = sample
+        print('-----looping for one sample sets samples-----')
+        ## have to check first that there are samples in the sampleSet
+        request_url = APIURL+urltail+"/"+str(sample_set["id"])+"/samples"
+        print('checking to see if there are samples from files from ' + request_url)
+        response = requests.get(request_url, headers=headers)
+        if len(response.json()["data"]) > 0:
+
+            request_url = APIURL+urltail+"/"+str(sample_set["id"])+"/samples?includes=subject.fullConsent&per_page=1000"
+            print( 'getting samples from ' + request_url )
+            response = requests.get(request_url, headers=headers)  
+
+            last_page = response.json()["meta"]["last_page"]
+            sample_set_subject_data = response.json()["data"]
+
+            for sample in sample_set_subject_data:
+                sample_dict[sample["key"]] = sample
+
+            if last_page > 1:
+                for page in range( last_page + 1 ):
+                    if page < 2:
+                        continue
+                    else:
+                        print("page of samples getting got" + str(page))
+                        response = requests.get(request_url + "&page=" + str(page), headers=headers)
+                        print('trying to get from ' + request_url + "&page=" + str(page))
+                        sample_set_subject_data = response.json()["data"]
+
+                        for sample in sample_set_subject_data:
+                            sample_dict[sample["key"]] = sample
+                            
+        else:
+            print('no samples in this sampleSet. Moving on...')
+            continue
+    
+        print(str(len(sample_dict)) + " subjects currently in this dataset")
     ## sample dict after this for loop will be all the samples for a dataset (some subjects have multi samples 4870 subj/4909 sample in dev server)
     ## sample_set is set of unique subject_ids in the sample_dict
     
@@ -303,6 +337,9 @@ for dataset in dataset_data:
                 ## if the subject's consent matches the current project, add to the pss set
                 if sample["subject"]["consent"]["key"] == c:
                     project_sample_set.add( sample["subject"]["key"] )
+        
+        ## trying to debug why its not finding samples                    
+        print("sample set for " + c + " is " + str(len(project_sample_set)))
 
         ## create project for each consent in dataset_consents list, if it has any associated subjects
         if len(project_sample_set) > 0:
@@ -397,7 +434,7 @@ for dataset in dataset_data:
 
                                 current_subject_phenotypes_dict["disease"] = "AD"
 
-
+                        print(current_subject_phenotypes_dict)
                         phenotype_obj = {
                             "APOE": current_subject_phenotypes_dict["apoe"], 
                             "sex": current_subject_phenotypes_dict["sex"], 
