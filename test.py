@@ -9,7 +9,6 @@ import hashlib
 
 from settings import TOKEN, APIURL, CTYPE, ACCEPT
 
-urltail = "datasets"
 headers = {
     'Content-Type': "application/json",
     'Accept': "application/json",
@@ -17,7 +16,7 @@ headers = {
     'User-Agent': "PostmanRuntime/7.18.0",
     'Cache-Control': "no-cache",
     'Postman-Token': "dd5ae43f-70d8-41e7-8911-55f1d3fa4d6d,0a7e9fcf-becc-49a0-9e86-7afa02e425d5",
-    'Host': "dev2.niagads.org",
+    'Host': "dev3.niagads.org",
     'Accept-Encoding': "gzip, deflate",
     'Connection': "keep-alive",
     'cache-control': "no-cache"
@@ -115,6 +114,7 @@ def build_dataset_url(dataset_name):
 
 ## how to add to base string
 ## APIURL+urltail"/1/subjects 
+urltail = "datasets"
 
 response = requests.get(APIURL+urltail, headers=headers)
 # response.json() produces a dictionary
