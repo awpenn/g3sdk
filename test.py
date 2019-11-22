@@ -52,7 +52,15 @@ def race_transform(pnode):
     p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
 
-    accepted_values = ["american indian/alaska native", "asian", "black or african american", "native hawaiian or other pacific islander", "other", "white", "na"]
+    accepted_values = [
+        "american indian/alaska native", 
+        "asian", 
+        "black or african american", 
+        "native hawaiian or other pacific islander", 
+        "other", 
+        "white", 
+        "na"
+    ]
 
 
     return p
@@ -62,7 +70,7 @@ def ethnicity_transform(pnode):
     p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
 
-    accepted_values = ["hispanic or latino", "not hispanic or latino", "not applicable/not available"]
+    accepted_values = ["hispanic or latino", "not hispanic or latino", "not applicable", "na"]
     
     return p
 
