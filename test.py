@@ -450,7 +450,7 @@ for dataset in dataset_data:
                         }
 
                         print("creating phenotype record for " + current_subject_id)
-                        print(phenotype_obj)
+
                         submitter.submit_record(program_name, project_name, phenotype_obj)
             # once all the subject, sample, and phenotype records for a project are created, create a fileset_[consent_level]
             # node corresponding to current project (consent level) for each fileset in the program (dataset), query for the files
@@ -486,7 +486,9 @@ for dataset in dataset_data:
                 ## first filtering on fileset_id (in fileset_sample_files_list object) == fileset_id
                 ## then by c (current consent)
                 for file in fileset_sample_files_list:
-                    if file["fileset_id"] == fileset_id and file["subject"]["consent"]["key"] == c:
+                    print('heres a file')
+                    print(file)
+                    if file["fileset_id"] == fileset_id and file["sample"]["subject"]["consent"]["key"] == c:
                         ##in DSS type=cram, index, etc., on datastage that is format
                         file_format = file["type"]
                         ##in datastage this is WGS, WES, etc., which is sample.assay in dss data
