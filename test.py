@@ -28,75 +28,81 @@ auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 
 submitter = Gen3Submission(endpoint, auth)
 
-## transform/builder function 
+##phenotype transform/builder functions 
+def prettifier(rawInput):
+    connectives = ['and', 'or']
+
+    tada = []
+    def checkForSlash(input):
+        if "/" in input:
+            i = input.find("/")+1
+            t = input[:i].lower() + input[i:].capitalize()
+            build(t)
+
+        else:
+            build(input)
+
+    def build(input):
+        for word in input.split():
+            if word not in connectives and word is not 'na':
+                first = word[0].capitalize()
+                rest = word[1:]
+                tada.append(first+rest)
+
+            else:
+                if word is not 'na':
+                    tada.append(word)
+                else:
+                    tada.append('NA')
+
+    checkForSlash(rawInput)
+    return " ".join(tada)
+
 def apoe_tranform(pnode):
     p = pnode["value"]
-    accepted_values = ["22", "23", "24", "33", "34", "44", "na"]
+    accepted_values = ["22", "23", "24", "33", "34", "44", "NA"]
     if pnode["value"] in accepted_values:
         return pnode["value"]
     else:
-        return 'na'
+        return 'NA'
     
-    return p
+    return prettifier(p)
 
 def sex_transform(pnode):
     # print(pnode)
     p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
-    accepted_values = ["male", "female"]
 
-    return p    
+    # return prettifier(p_dict[str(p)]) 
+    return prettifier(p) 
 
 def race_transform(pnode):
 
     p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
 
-    accepted_values = [
-        "american indian/alaska native", 
-        "asian", 
-        "black or african american", 
-        "native hawaiian or other pacific islander", 
-        "other", 
-        "white", 
-        "na"
-    ]
-
-
-    return p
+    # return prettifier(p_dict[str(p)]) 
+    return prettifier(p) 
 
 def ethnicity_transform(pnode):
 
     p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
-
-    accepted_values = ["hispanic or latino", "not hispanic or latino", "not applicable", "na"]
     
-    return p
+    # return prettifier(p_dict[str(p)]) 
+    return prettifier(p) 
 
 def dx_transform(pnode):
     p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
-
-    accepted_values = [
-                    "case",
-                    "control",
-                    "other",
-                    "unknown"
-                ]
-
-    if "ad" in p:
-        dv = 'case'
-    else:
-        dv = 'unknown'
     
-    return dv
+    return prettifier(p)
 
 def disease_transform(pnode):
     p = pnode["value"]
     p_dict = json.loads(pnode["phenotype"]["values"])
     
-    return p
+    return prettifier(p)
 
 def build_dataset_url(dataset_name):
     dataset_url_base = "https://dss.naigads.org/datasets/"
@@ -114,7 +120,7 @@ urltail = "datasets"
 
 response = requests.get(APIURL+urltail, headers=headers)
 # response.json() produces a dictionary
-
+print(APIURL+urltail)
 dataset_data = response.json()['data']
 for dataset in dataset_data:
     program_release_name = dataset["name"]
@@ -311,9 +317,9 @@ for dataset in dataset_data:
                     if page < 2:
                         continue
                     else:
-                        print("page of samples getting got" + str(page))
+                        print("page of samples: got " + str(page))
                         response = requests.get(request_url + "&page=" + str(page), headers=headers)
-                        print('trying to get from ' + request_url + "&page=" + str(page))
+                        print('Retrieving samples from ' + request_url + "&page=" + str(page))
                         sample_set_subject_data = response.json()["data"]
 
                         for sample in sample_set_subject_data:
@@ -422,6 +428,7 @@ for dataset in dataset_data:
                         
                         for pnode in project_phenotype_list:
                             if pnode["subject"]["key"] == current_subject_id:
+                                print('pnode counter' + pnode["subject"]["key"])
                                 # print(pnode["phenotype"]["name"]+": "+pnode["value"]) = phenotype: phenotype value
                                 ## these are our five 'core-harmonized' phenotypes that need to be sought out
 
@@ -441,7 +448,7 @@ for dataset in dataset_data:
                                     current_subject_phenotypes_dict["study_specific_diagnosis"] = dx_transform(pnode)
 
                                 current_subject_phenotypes_dict["disease"] = "AD"
-
+                        print(current_subject_phenotypes_dict)
                         phenotype_obj = {
                             "APOE": current_subject_phenotypes_dict["apoe"], 
                             "sex": current_subject_phenotypes_dict["sex"], 
