@@ -155,7 +155,9 @@ for dataset in dataset_data:
     fileset_nonsample_files_list = []
     fileset_allconsents_files_list = []
 
-
+    ## 12/6 I think here, with datasetVersion, all the files for a dataset across filesets are returned, 
+    ## so we'll eliminate the fileset-based file aggregation (remove fileset_[filetype] from lists above)
+    ## and then will have to remove match on fileset_id down in the ildf/ssdf writing section (because will be irrelevant)
     for fileset in fileset_data:
 
         ## get sample-related files
