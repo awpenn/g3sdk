@@ -113,14 +113,9 @@ def build_dataset_url(dataset_name):
     else:
         return dataset_url_base + dataset_name.lower()
 
-
-## how to add to base string
-## APIURL+urltail"/1/subjects 
-urltail = "datasets"
-
-response = requests.get(APIURL+urltail, headers=headers)
+response = requests.get(APIURL+"datasets/", headers=headers)
 # response.json() produces a dictionary
-print(APIURL+urltail)
+print(APIURL+APIURL+"/datasets")
 dataset_data = response.json()['data']
 for dataset in dataset_data:
     program_release_name = dataset["name"]
@@ -149,8 +144,8 @@ for dataset in dataset_data:
 
     fetched_program_id = submitter.query(query)["data"]["program"][0]["id"]
     # ## get all the filesets for a dataset, to be used later
-    urltail = 'datasets'
-    request_url = APIURL+urltail+"/"+str(dss_dataset_id)+"/filesets"
+
+    request_url = APIURL+"datasets/"+str(dss_dataset_id)+"/filesets"
     print('Getting fileset data from ' + request_url)
     response = requests.get(request_url, headers=headers)
     fileset_data = response.json()["data"]
@@ -162,16 +157,15 @@ for dataset in dataset_data:
 
 
     for fileset in fileset_data:
-        urltail = 'filesets'
 
         ## get sample-related files
         ## have to see first if there are sample files
-        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/fileSamples"
+        request_url = APIURL+"filesets/"+str(fileset["id"])+"/fileSamples"
         print('checking to see if there are Sample files from ' + request_url)
         response = requests.get(request_url, headers=headers)
         if len(response.json()["data"]) > 0:
 
-            request_url = APIURL+urltail+"/"+str(fileset["id"])+"/fileSamples?includes=sample.subject.fullConsent&per_page=1000"
+            request_url = APIURL+"filesets/"+str(fileset["id"])+"/fileSamples?includes=sample.subject.fullConsent&per_page=1000"
             print( 'getting sample files from ' + request_url )
             response = requests.get(request_url, headers=headers)
             last_page = response.json()["meta"]["last_page"]
@@ -195,12 +189,12 @@ for dataset in dataset_data:
 
         ## get non-sample files
         ## have to see first if there are nonSample files
-        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/fileNonSamples"
+        request_url = APIURL+"filesets/"+str(fileset["id"])+"/fileNonSamples"
         print('checking to see if there are nonSample files from ' + request_url)
         response = requests.get(request_url, headers=headers)
         if len(response.json()["data"]) > 0:
 
-            request_url = APIURL+urltail+"/"+str(fileset["id"])+"/fileNonSamples?per_page=1000"
+            request_url = APIURL+"filesets/"+str(fileset["id"])+"/fileNonSamples?per_page=1000"
             print( 'getting non-sample files from ' + request_url )
             response = requests.get(request_url, headers=headers)
 
@@ -226,12 +220,12 @@ for dataset in dataset_data:
 
         ## get all-con files
         ## have to check first that there are all-con files
-        request_url = APIURL+urltail+"/"+str(fileset["id"])+"/fileAllConsents"
+        request_url = APIURL+"filesets/"+str(fileset["id"])+"/fileAllConsents"
         print('checking to see if there are nonSample files from ' + request_url)
         response = requests.get(request_url, headers=headers)
         if len(response.json()["data"]) > 0:
 
-            request_url = APIURL+urltail+"/"+str(fileset["id"])+"/fileAllConsents?per_page=1000"
+            request_url = APIURL+"filesets/"+str(fileset["id"])+"/fileAllConsents?per_page=1000"
             print( 'getting all-consent files from ' + request_url )
             response = requests.get(request_url, headers=headers)
             last_page = response.json()["meta"]["last_page"]
@@ -258,8 +252,8 @@ for dataset in dataset_data:
     print(str(len(fileset_allconsents_files_list)) + " allconsent file(s) retrieved total for dataset " + str(dss_dataset_id))
     print('-------fileset loop--------')
     ## get all the phenotype nodes for a dataset, to be entered when subject/sample nodes created below
-    urltail = 'datasets'
-    request_url = APIURL+urltail+"/"+str(dss_dataset_id)+"/subjectPhenotypes?includes=phenotype,subject&per_page=11000"
+
+    request_url = APIURL+"datasets/"+str(dss_dataset_id)+"/subjectPhenotypes?includes=phenotype,subject&per_page=11000"
     response = requests.get(request_url, headers=headers)
     last_page = response.json()["meta"]["last_page"]
     phenotype_data = response.json()["data"]
@@ -284,9 +278,9 @@ for dataset in dataset_data:
                     project_phenotype_list.append(phenotype)
 
     ## get subjects/samples by querying sampleSets of a dataset with dss_dataset_id
-    urltail = 'datasets'
-    print( APIURL+urltail+"/"+str(dss_dataset_id)+"/sampleSets" )
-    response = requests.get(APIURL+urltail+"/"+str(dss_dataset_id)+"/sampleSets", headers=headers)
+
+    print( APIURL+"datasets/"+str(dss_dataset_id)+"/sampleSets" )
+    response = requests.get(APIURL+"datasets/"+str(dss_dataset_id)+"/sampleSets", headers=headers)
     ## a list of sample sets for a dataset
     sample_set_data = response.json()["data"]
     
@@ -294,15 +288,15 @@ for dataset in dataset_data:
     print('these are in sample set data')
     print(sample_set_data)
     for sample_set in sample_set_data:    
-        urltail = 'sampleSets'
+
         print('-----looping for one sample sets samples-----')
         ## have to check first that there are samples in the sampleSet
-        request_url = APIURL+urltail+"/"+str(sample_set["id"])+"/samples"
+        request_url = APIURL+"sampleSets/"+str(sample_set["id"])+"/samples"
         print('checking to see if there are samples from files from ' + request_url)
         response = requests.get(request_url, headers=headers)
         if len(response.json()["data"]) > 0:
 
-            request_url = APIURL+urltail+"/"+str(sample_set["id"])+"/samples?includes=subject.fullConsent&per_page=1000"
+            request_url = APIURL+"sampleSets/"+str(sample_set["id"])+"/samples?includes=subject.fullConsent&per_page=1000"
             print( 'getting samples from ' + request_url )
             response = requests.get(request_url, headers=headers)  
 
@@ -335,8 +329,7 @@ for dataset in dataset_data:
     
     ## get a list of consents for the dataset
     dataset_consents = []
-    urltail = 'datasets'
-    response = requests.get(APIURL+urltail+"/"+str(dss_dataset_id)+"/consents", headers=headers)
+    response = requests.get(APIURL+"datasets/"+str(dss_dataset_id)+"/consents", headers=headers)
 
     consent_data = response.json()["data"]
     for consent in consent_data:
