@@ -164,7 +164,7 @@ for dataset in dataset_data:
         print('checking to see if there are Sample files from ' + request_url)
         response = requests.get(request_url, headers=headers)
         if len(response.json()["data"]) > 0:
-
+                    ##tested versioning-compliant url = https://dev3.niagads.org/darm/api/datasetVersions/{id}/fileSamples?includes=sample.subject.fullConsent
             request_url = APIURL+"filesets/"+str(fileset["id"])+"/fileSamples?includes=sample.subject.fullConsent&per_page=1000"
             print( 'getting sample files from ' + request_url )
             response = requests.get(request_url, headers=headers)
@@ -189,6 +189,7 @@ for dataset in dataset_data:
 
         ## get non-sample files
         ## have to see first if there are nonSample files
+                    ##tested versioning-compliant url = https://dev3.niagads.org/darm/api/datasetVersions/{id}/fileNonSamples 
         request_url = APIURL+"filesets/"+str(fileset["id"])+"/fileNonSamples"
         print('checking to see if there are nonSample files from ' + request_url)
         response = requests.get(request_url, headers=headers)
@@ -220,11 +221,12 @@ for dataset in dataset_data:
 
         ## get all-con files
         ## have to check first that there are all-con files
+                    ##tested versioning-compliant url = https://dev3.niagads.org/darm/api/datasetVersions/{id}/fileAllConsents
         request_url = APIURL+"filesets/"+str(fileset["id"])+"/fileAllConsents"
         print('checking to see if there are nonSample files from ' + request_url)
         response = requests.get(request_url, headers=headers)
         if len(response.json()["data"]) > 0:
-
+                    ##tested versioning-compliant url = https://dev3.niagads.org/darm/api/datasetVersions/{id}/fileAllConsents
             request_url = APIURL+"filesets/"+str(fileset["id"])+"/fileAllConsents?per_page=1000"
             print( 'getting all-consent files from ' + request_url )
             response = requests.get(request_url, headers=headers)
@@ -278,7 +280,8 @@ for dataset in dataset_data:
                     project_phenotype_list.append(phenotype)
 
     ## get subjects/samples by querying sampleSets of a dataset with dss_dataset_id
-
+                    
+                    ##tested versioning-compliant url = https://dev3.niagads.org/darm/api/datasetVersions/{id}/sampleSets
     print( APIURL+"datasets/"+str(dss_dataset_id)+"/sampleSets" )
     response = requests.get(APIURL+"datasets/"+str(dss_dataset_id)+"/sampleSets", headers=headers)
     ## a list of sample sets for a dataset
@@ -329,8 +332,10 @@ for dataset in dataset_data:
     
     ## get a list of consents for the dataset
     dataset_consents = []
+
+                        ##tested versioning-compliant url = https://dev3.niagads.org/darm/api/datasetVersions/{id}/consents
     response = requests.get(APIURL+"datasets/"+str(dss_dataset_id)+"/consents", headers=headers)
-    
+
     consent_data = response.json()["data"]
     for consent in consent_data:
         dataset_consents.append(consent["key"])
