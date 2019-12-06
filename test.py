@@ -330,7 +330,7 @@ for dataset in dataset_data:
     ## get a list of consents for the dataset
     dataset_consents = []
     response = requests.get(APIURL+"datasets/"+str(dss_dataset_id)+"/consents", headers=headers)
-
+    
     consent_data = response.json()["data"]
     for consent in consent_data:
         dataset_consents.append(consent["key"])

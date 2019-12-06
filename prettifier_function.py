@@ -1,5 +1,3 @@
-inco = ['other', 'african american or black', 'na', 'american indian/alaska native', 'AD', 'Female', 'not available/not applicable', '23']
-
 def prettifier(rawInput):
     connectives = ['and', 'or']
 
