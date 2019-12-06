@@ -28,11 +28,11 @@ auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 
 submitter = Gen3Submission(endpoint, auth)
 
-##phenotype transform/builder functions 
-def prettifier(rawInput):
+##smart uppercasing of lowercase phenotype values 
+def phenotype_prettifier(rawInput):
     connectives = ['and', 'or']
+    word_list = []
 
-    tada = []
     def checkForSlash(input):
         if "/" in input:
             i = input.find("/")+1
@@ -47,62 +47,17 @@ def prettifier(rawInput):
             if word not in connectives and word is not 'na':
                 first = word[0].capitalize()
                 rest = word[1:]
-                tada.append(first+rest)
+                word_list.append(first+rest)
 
             else:
                 if word is not 'na':
-                    tada.append(word)
+                    word_list.append(word)
                 else:
-                    tada.append('NA')
+                    word_list.append('NA')
 
     checkForSlash(rawInput)
-    return " ".join(tada)
+    return " ".join(word_list)
 
-def apoe_tranform(pnode):
-    p = pnode["value"]
-    accepted_values = ["22", "23", "24", "33", "34", "44", "NA"]
-    if pnode["value"] in accepted_values:
-        return pnode["value"]
-    else:
-        return 'NA'
-    
-    return prettifier(p)
-
-def sex_transform(pnode):
-    # print(pnode)
-    p = pnode["value"]
-    p_dict = json.loads(pnode["phenotype"]["values"])
-
-    # return prettifier(p_dict[str(p)]) 
-    return prettifier(p) 
-
-def race_transform(pnode):
-
-    p = pnode["value"]
-    p_dict = json.loads(pnode["phenotype"]["values"])
-
-    # return prettifier(p_dict[str(p)]) 
-    return prettifier(p) 
-
-def ethnicity_transform(pnode):
-
-    p = pnode["value"]
-    p_dict = json.loads(pnode["phenotype"]["values"])
-    
-    # return prettifier(p_dict[str(p)]) 
-    return prettifier(p) 
-
-def dx_transform(pnode):
-    p = pnode["value"]
-    p_dict = json.loads(pnode["phenotype"]["values"])
-    
-    return prettifier(p)
-
-def disease_transform(pnode):
-    p = pnode["value"]
-    p_dict = json.loads(pnode["phenotype"]["values"])
-    
-    return prettifier(p)
 
 def build_dataset_url(dataset_name):
     dataset_url_base = "https://dss.naigads.org/datasets/"
@@ -428,26 +383,18 @@ for dataset in dataset_data:
                         
                         for pnode in project_phenotype_list:
                             if pnode["subject"]["key"] == current_subject_id:
-                                print('pnode counter' + pnode["subject"]["key"])
-                                # print(pnode["phenotype"]["name"]+": "+pnode["value"]) = phenotype: phenotype value
-                                ## these are our five 'core-harmonized' phenotypes that need to be sought out
 
-                                if pnode["phenotype"]["name"].lower() == "apoe":
-                                    current_subject_phenotypes_dict["apoe"] = apoe_tranform(pnode)
-                                
-                                if pnode["phenotype"]["name"].lower() in ["sex", "gender"]:
-                                    current_subject_phenotypes_dict["sex"] = sex_transform(pnode)
+                                ## pname = sex/race/etchnicity/etc.
+                                ## may have to be appended with .lower() depending on how harmonized table turns out
+                                pname = pnode["phenotype"]["name"]
+                                ## index value given as phenotype value (0, 1, etc.)
+                                p_index = str(pnode["value"])
+                                ## json data dictionary attached to each phenotype
+                                p_dict = json.loads(pnode["phenotype"]["values"])
 
-                                if pnode["phenotype"]["name"].lower() in ["race"]:
-                                    current_subject_phenotypes_dict["race"] = race_transform(pnode)
+                                ## makes a key/val pair in cspd dict dynamically, so don't need 6 if statements
+                                current_subject_phenotypes_dict[pname] = phenotype_prettifier( p_dict[p_index] )
 
-                                if pnode["phenotype"]["name"].lower() in ["ethnicity"]:
-                                    current_subject_phenotypes_dict["ethnicity"] = ethnicity_transform(pnode)
-
-                                if pnode["phenotype"]["name"].lower() in ["dx", "diagnosis"]:
-                                    current_subject_phenotypes_dict["study_specific_diagnosis"] = dx_transform(pnode)
-
-                                current_subject_phenotypes_dict["disease"] = "AD"
                         print(current_subject_phenotypes_dict)
                         phenotype_obj = {
                             "APOE": current_subject_phenotypes_dict["apoe"], 
@@ -458,7 +405,7 @@ for dataset in dataset_data:
                             "race": current_subject_phenotypes_dict["race"], 
                             "type": "phenotype", 
                             "study_specific_diagnosis": current_subject_phenotypes_dict["study_specific_diagnosis"], 
-                            "disease": current_subject_phenotypes_dict["disease"], 
+                            "disease": current_subject_phenotypes_dict["dx"], 
                             "submitter_id": current_subject_id + "_pheno", 
                             "ethnicity": current_subject_phenotypes_dict["ethnicity"]
                         }
