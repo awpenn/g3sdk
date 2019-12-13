@@ -310,8 +310,8 @@ for dataset in dataset_data:
             if page < 2:
                 continue
             else:
-                response = requests.get(request_url + "&page=" + str(page), headers=headers)
-                print('getting paginated data from ' + request_url + "&page=" + str(page))
+                response = requests.get(request_url + "?page=" + str(page), headers=headers)
+                print('getting paginated data from ' + request_url + "?page=" + str(page))
                 consent_data = response.json()["data"]
                 for consent in consent_data:
                     dataset_consents.append(consent["key"])
