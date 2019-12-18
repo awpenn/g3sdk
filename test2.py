@@ -1,3 +1,5 @@
+from dataload_functions import *
+
 import gen3
 from gen3 import submission
 from gen3 import auth
@@ -7,23 +9,7 @@ from requests.auth import AuthBase
 import requests
 import hashlib
 
-## dataget/load functions in external file
-from dataload_functions import *
-
-from settings import TOKEN, APIURL, CTYPE, ACCEPT
-
-headers = {
-    'Content-Type': "application/json",
-    'Accept': "application/json",
-    "Authorization": "Bearer {token}".format(token=TOKEN),
-    'User-Agent': "PostmanRuntime/7.18.0",
-    'Cache-Control': "no-cache",
-    'Postman-Token': "dd5ae43f-70d8-41e7-8911-55f1d3fa4d6d,0a7e9fcf-becc-49a0-9e86-7afa02e425d5",
-    'Host': "dev3.niagads.org",
-    'Accept-Encoding': "gzip, deflate",
-    'Connection': "keep-alive",
-    'cache-control': "no-cache"
-}
+from settings import APIURL, HEADERS
 
 Gen3Submission = submission.Gen3Submission
 endpoint = "https://gen3test.lisanwanglab.org"
@@ -31,5 +17,41 @@ auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 
 submitter = Gen3Submission(endpoint, auth)
 
+response = requests.get(APIURL+"datasets?includes=datasetVersions", headers=HEADERS)
+# response.json() produces a dictionary
+print(APIURL+"datasets?includes=datasetVersions")
+dataset_data = response.json()['data']
 
-print(test())
+for dataset in dataset_data:
+    ## dss_dataset_id = dataset["id"]
+    program_name = dataset["accession"]
+    program_url = build_dataset_url( program_name )
+    
+    for version in dataset["datasetVersions"]:
+        if version["active"] == 1:
+
+            ## for now (12/10) the 'active version in dss doesnt have the harmonized phenos, so for the whole deal, gonna hardcode datasetVersion2
+            dss_dataset_id = version["id"]
+    ## AW- production will have latest_release as a variable
+    program_obj = {
+        "type": "program",
+        "dbgap_accession_number": dataset["accession"],
+        "name": dataset["accession"],
+        "release_name": dataset["name"],
+        "summary_description": dataset["description"],
+        "dataset_url": program_url, 
+    }
+
+    ## create programs from dataset list
+    print( "creating program node for " + dataset["accession"] )
+
+    submitter.create_program(program_obj)
+    
+    filesAndPhenotypes = getFilesPhenotypes(dss_dataset_id) ##array of arrays, fileSamp, nonSamp, allCon, phenotypes
+    samplesAndSubjects = getSamplesSubjects(dss_dataset_id) ## sampleDict (with subject info `included`)
+    consents = getConsents(dss_dataset_id)
+
+    for consent in consents:
+        createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects)
+    
+

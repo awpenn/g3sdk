@@ -128,7 +128,7 @@ for dataset in dataset_data:
     response = requests.get(request_url, headers=headers)
     if len(response.json()["data"]) > 0:
             ##tested versioning-compliant url = https://dev3.niagads.org/darm/api/datasetVersions/{id}/fileSamples?includes=sample.subject.fullConsent
-        request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/fileSamples?includes=sample.subject.fullConsent&per_page=1000"
+        request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/fileSamples?includes=sample.subject.fullConsent&per_page=10000"
         print( 'getting sample files from ' + request_url )
         response = requests.get(request_url, headers=headers)
         last_page = response.json()["meta"]["last_page"]
@@ -147,6 +147,7 @@ for dataset in dataset_data:
                     file_sample_data = response.json()["data"]
                     for sample_file in file_sample_data:
                         sample_files_list.append(sample_file)
+                print('length of files list after this page ' + str(len(sample_files_list)))
     else:
         print('no sample files, moving on...')
 
