@@ -51,6 +51,8 @@ for dataset in dataset_data:
     samplesAndSubjects = getSamplesSubjects(dss_dataset_id) ## sampleDict (with subject info `included`)
     consents = getConsents(dss_dataset_id)
 
+    datasetReport(consents, program_name, filesAndPhenotypes, samplesAndSubjects)
+
     for consent in consents:
         createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects)
     

@@ -55,6 +55,20 @@ def build_dataset_url(dataset_name):
     else:
         return dataset_url_base + dataset_name.lower()
 
+
+def datasetReport(consents, program_name, filesAndPhenotypes, samplesAndSubjects):
+    sampleFiles = filesAndPhenotypes[0]
+    nonSampleFiles = filesAndPhenotypes[1]
+    allConsentFiles = filesAndPhenotypes[2]
+    phenotypes = filesAndPhenotypes[3]
+
+    print('{} consent-levels in this dataset').format(str(len(consents)))
+    print('{} subjects with samples in this dataset').format(str(len(samplesAndSubjects)))
+    print('{} individual level files in this dataset').format(str(len(sampleFiles)))
+    print('{} non-sample files in this dataset').format(str(len(nonSampleFiles)))
+    print('{} all-consent files in this dataset').format(str(len(allConsentFiles)))
+    print('{} phenotype datapoints in this dataset').format(str(len(phenotypes)))
+
 ##returns array of arrays: fileSamp, nonSamp, allCon, phenotypes
 def getFilesPhenotypes(dss_dataset_id): 
     filesSamples = getData(dss_dataset_id, "fileSamples")
@@ -185,14 +199,49 @@ def getData(dss_dataset_id, filetype):
     return data_list
 
 def createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects):
-    sampleFiles = filesAndPhenotypes[0]
-    nonSampleFiles = filesAndPhenotypes[1]
-    allConsentFiles = filesAndPhenotypes[2]
-    phenotypes = filesAndPhenotypes[3]
 
-    print(consent)
-    print(program_name)
-    print(str(len(samplesAndSubjects)) + ' subjects in this project')
-    print(str(len(sampleFiles)) + ' sample files in this project')
-    print(str(len(allConsentFiles)) + ' all-consent files in this project')
-    print(str(len(phenotypes)) + ' phenotype nodes in this project')
+    print('Creating project for {}, consent-level {}').format(program_name, consent)
+
+    project_sample_set = set({})
+    for key, sample in samplesAndSubjects.iteritems():
+        ## some subjects have 'null' consent, ignoring for now
+        if sample["subject"]["consent"] is not None:
+            ## if the subject's consent matches the current project, add to the pss set
+            if sample["subject"]["consent"]["key"].strip() == consent:
+                project_sample_set.add( sample["subject"]["key"] )
+
+    print('creating project, {} unique subject ids found').format(str(len(project_sample_set)))
+
+    if len(project_sample_set) > 0:
+        project_name = program_name+"_"+consent
+        project_obj = {
+            "type": "project",
+            "dbgap_accession_number": project_name,
+            "name": project_name,
+            "code": project_name,
+            "availability_type": "Restricted"
+        }
+        print( "Creating project node for " + project_name )
+        submitter.create_project(program_name, project_obj)
+
+        ## create CMC for each created project
+
+        query = '{project(name:\"%s\"){id}}' % project_name
+        fetched_project_id = submitter.query(query)["data"]["project"][0]["id"]
+
+        cmc_obj = {
+            "*collection_type": "Consent-Level File Manifest", 
+            "description": "Core Metadata Collection for "+project_name, 
+            "type": "core_metadata_collection", 
+            "submitter_id": project_name+"_"+"core_metadata_collection",
+            "projects": {
+                "id": fetched_project_id
+            }
+        }
+
+        print( "creating core_metadata_collection for " + project_name )
+        submitter.submit_record(program_name, project_name, cmc_obj)
+
+        createSubjectAndAssociated(project_sample_set, filesAndPhenotypes, program_name, project_name, consent)
+
+def createSubjectAndAssociated(project_sample_set, filesAndPhenotypes, program_name, project_name, consent):
