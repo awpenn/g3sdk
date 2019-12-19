@@ -7,7 +7,11 @@ from requests.auth import AuthBase
 import requests
 import hashlib
 
-from multiprocessing import process
+import calendar
+import time
+
+import threading
+from multiprocessing import Process
 
 from settings import APIURL, HEADERS
 
@@ -211,6 +215,7 @@ def getData(dss_dataset_id, filetype):
 
 
 def createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects):
+    print('Starting project {} build at {}').format(consent, calendar.timegm(time.gmtime()))
     filesSamples = filesAndPhenotypes[0]
     filesNonSamples = filesAndPhenotypes[1]
     filesAllConsents = filesAndPhenotypes[2]
@@ -259,8 +264,25 @@ def createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects)
         print( "creating core_metadata_collection for " + project_name )
         submitter.submit_record(program_name, project_name, cmc_obj)
 
-        createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
-        createIDLFs(consent, fileSamples, project_name, program_name)
+        # createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
+
+        ## node generation with multiprocessing
+        p1 = Process(target=createIDLFs, args=(consent, filesSamples, project_name, program_name))
+        p2 = Process(target=createALDFs, args=(consent, filesNonSamples, project_name, program_name, "filesNonSamples"))
+        p3 = Process(target=createALDFs, args=(consent, filesAllConsents, project_name, program_name, "filesAllConsents"))
+
+        p1.start()
+        p2.start()
+        p3.start()
+ 
+        p1.join()
+        p2.join()
+        p3.join()
+
+
+        # createIDLFs(consent, filesSamples, project_name, program_name)
+        # createALDFs(consent, filesNonSamples, project_name, program_name, "filesNonSamples")
+        # createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
 
 def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id):
     for dictkey, subject_id in enumerate(project_sample_set):
@@ -338,9 +360,9 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                 
                 create_subject()
                 create_sample()
-                create_phenotype()           
+                create_phenotype()
                 
-def createIDLFs(consent, fileSamples, project_name, program_name):
+def createIDLFs(consent, filesSamples, project_name, program_name):
     for file in filesSamples:
         if file["sample"]["subject"]["consent"] is not None:
             if file["sample"]["subject"]["consent"]["key"].strip() == consent:
@@ -375,4 +397,73 @@ def createIDLFs(consent, fileSamples, project_name, program_name):
 
                 submitter.submit_record(program_name, project_name, ildf_obj)
 
+def createALDFs(consent, files_list, project_name, program_name, filetype):
+    def create_non_sample_file():
+        for file in files_list:
+            if file["consent"] is not None:
 
+                if file["consent_key"].strip() == consent:
+                            
+                    ##in DSS type=cram, index, etc., on datastage that is format
+                    ##file_type = ???? not in data (WGS WES etc.)... n/a for now
+                    file_type = 'n/a'
+                    file_format = file["type"]
+                    file_id = file["id"]
+                    file_name = file["name"]
+                    file_submitter_id = file_name + "_" + file_format + "_" + str( file_id )
+                    file_md5 = hashlib.md5( file_name + file_format + str( file_id ) ).hexdigest()
+
+                            # AW- currently missing data_type, ref_build, data_category(genotype, expression, etc.) because not in DSS data
+                    aldf_obj = {
+                        "*data_type": file["type"], 
+                        "*consent": consent, 
+                        "core_metadata_collections": {
+                            "submitter_id": project_name + "_core_metadata_collection"
+                        }, 
+                        "*type": "aggregate_level_data_file", 
+                        "*file_path": file["path"], 
+                        "*data_format": file_format, 
+                        "*md5sum": file_md5, 
+                        "*file_size": file["size"], 
+                        "*submitter_id": file_submitter_id, 
+                        "*file_name": file_name
+                    }
+                            
+                    print("creating record for non-sample file:  " + file_submitter_id )
+                    submitter.submit_record(program_name, project_name, aldf_obj)
+    
+    def create_all_consent_file():
+        for file in files_list:
+
+            ##in datastage this is WGS, WES, etc., for allcons not in data and maybe not applicable, for now n/a
+            file_type = 'n/a'
+            file_format = file["type"]
+            file_id = file["id"]
+            file_name = file["name"]
+            file_submitter_id = file_name + "_" + file_format + "_" + str( file_id )
+            file_md5 = hashlib.md5( file_name + file_format + str( file_id )).hexdigest()
+                            
+            # AW- currently missing data_type, ref_build, data_category(genotype, expression, etc.) because not in DSS data
+
+            aldf_obj = {
+                "*data_type": file_type, 
+                "*consent": consent, 
+                "core_metadata_collections": {
+                    "submitter_id": project_name + "_core_metadata_collection"
+                }, 
+                "*type": "aggregate_level_data_file", 
+                "*file_path": file["path"], 
+                "*data_format": file_format, 
+                "*md5sum": file_md5, 
+                "*file_size": file["size"], 
+                "*submitter_id": file_submitter_id, 
+                "*file_name": file_name
+            }
+
+            print("creating record for all-consent file:  " + file_submitter_id )
+            submitter.submit_record(program_name, project_name, aldf_obj)
+
+    if filetype == 'filesNonSamples':
+        create_non_sample_file()
+    elif filetype == 'filesAllConsents':
+        create_all_consent_file()
