@@ -7,6 +7,8 @@ from requests.auth import AuthBase
 import requests
 import hashlib
 
+from multiprocessing import process
+
 from settings import APIURL, HEADERS
 
 Gen3Submission = submission.Gen3Submission
@@ -265,72 +267,79 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
         ## AW - why doesn't this create two subjects for subjects with multiple samples...but if tied to same subject entity (with submitter id) in db then maybe overwrites with same info?
         for samplekey, sample in samplesAndSubjects.iteritems():
             if sample["subject"]["key"] == subject_id:
-
+                
                 subject = sample["subject"]
-                subject_obj = {
-                    "cohort": subject["cohort_key"], 
-                    "projects": {
-                        "id": fetched_project_id
-                    }, 
-                    "consent": subject["consent"]["key"], 
-                    "type": "subject", 
-                    "submitter_id": subject["key"]
-                }
-
-                print( "creating subject record " + subject["key"] )
-                submitter.submit_record(program_name, project_name, subject_obj)
-
-                ## create a sample node for each passing through here while we're at it
-                print( "creating sample record(s) for " + sample["key"] )
-
-                sample_obj = {
-                    "platform": sample["platform"], 
-                    "type": "sample", 
-                    "submitter_id": sample["key"], 
-                    "data_type": sample["assay"], 
-                    "sample_source": sample["source"], 
-                    "subjects": {
-                        "submitter_id": sample["subject"]["key"]
-                    }
-                }
-                # print(sample_obj) # for checking object correctness
-                submitter.submit_record(program_name, project_name, sample_obj)
-
                 current_subject_id = subject["key"]
-                current_subject_phenotypes_dict = {}
-                        
-                for pnode in phenotypes:
-                    if pnode["subject"]["key"] == current_subject_id:
 
-                        ## pname = sex/race/etchnicity/etc.
-                        ## may have to be appended with .lower() depending on how harmonized table turns out
-                        pname = pnode["phenotype"]["name"]
-                        ## index value given as phenotype value (0, 1, etc.)
-                        p_index = str(pnode["value"])
-                        ## json data dictionary attached to each phenotype
-                        p_dict = json.loads(pnode["phenotype"]["values"])
+                def create_subject():
+                    subject_obj = {
+                        "cohort": subject["cohort_key"], 
+                        "projects": {
+                            "id": fetched_project_id
+                        }, 
+                        "consent": subject["consent"]["key"], 
+                        "type": "subject", 
+                        "submitter_id": subject["key"]
+                    }
 
-                        ## makes a key/val pair in cspd dict dynamically, so don't need 6 if statements
-                        current_subject_phenotypes_dict[pname] = phenotype_prettifier( p_dict[p_index] )
+                    print( "creating subject record " + subject["key"] )
+                    submitter.submit_record(program_name, project_name, subject_obj)
 
-                phenotype_obj = {
-                    "APOE": current_subject_phenotypes_dict["APOE"], 
-                    "sex": current_subject_phenotypes_dict["Sex"], 
-                    "subjects": {
-                        "submitter_id": current_subject_id
-                    }, 
-                    "race": current_subject_phenotypes_dict["Race"], 
-                    "type": "phenotype", 
-                    "study_specific_diagnosis": current_subject_phenotypes_dict["Study_Specific_Diagnosis"], 
-                    "disease": current_subject_phenotypes_dict["Disease"], 
-                    "submitter_id": current_subject_id + "_pheno", 
-                    "ethnicity": current_subject_phenotypes_dict["Ethnicity"]
-                }
+                def create_sample():
+                    print( "creating sample record(s) for " + sample["key"] )
 
-                print("creating phenotype record for " + current_subject_id)
+                    sample_obj = {
+                        "platform": sample["platform"], 
+                        "type": "sample", 
+                        "submitter_id": sample["key"], 
+                        "data_type": sample["assay"], 
+                        "sample_source": sample["source"], 
+                        "subjects": {
+                            "submitter_id": sample["subject"]["key"]
+                        }
+                    }
+                    # print(sample_obj) # for checking object correctness
+                    submitter.submit_record(program_name, project_name, sample_obj)
 
-                submitter.submit_record(program_name, project_name, phenotype_obj)
+                def create_phenotype():
+                    current_subject_phenotypes_dict = {}
+                            
+                    for pnode in phenotypes:
+                        if pnode["subject"]["key"] == current_subject_id:
 
+                            ## pname = sex/race/etchnicity/etc.
+                            ## may have to be appended with .lower() depending on how harmonized table turns out
+                            pname = pnode["phenotype"]["name"]
+                            ## index value given as phenotype value (0, 1, etc.)
+                            p_index = str(pnode["value"])
+                            ## json data dictionary attached to each phenotype
+                            p_dict = json.loads(pnode["phenotype"]["values"])
+
+                            ## makes a key/val pair in cspd dict dynamically, so don't need 6 if statements
+                            current_subject_phenotypes_dict[pname] = phenotype_prettifier( p_dict[p_index] )
+
+                    phenotype_obj = {
+                        "APOE": current_subject_phenotypes_dict["APOE"], 
+                        "sex": current_subject_phenotypes_dict["Sex"], 
+                        "subjects": {
+                            "submitter_id": current_subject_id
+                        }, 
+                        "race": current_subject_phenotypes_dict["Race"], 
+                        "type": "phenotype", 
+                        "study_specific_diagnosis": current_subject_phenotypes_dict["Study_Specific_Diagnosis"], 
+                        "disease": current_subject_phenotypes_dict["Disease"], 
+                        "submitter_id": current_subject_id + "_pheno", 
+                        "ethnicity": current_subject_phenotypes_dict["Ethnicity"]
+                    }
+
+                    print("creating phenotype record for " + current_subject_id)
+
+                    submitter.submit_record(program_name, project_name, phenotype_obj)
+                
+                create_subject()
+                create_sample()
+                create_phenotype()           
+                
 def createIDLFs(consent, fileSamples, project_name, program_name):
     for file in filesSamples:
         if file["sample"]["subject"]["consent"] is not None:
@@ -365,3 +374,5 @@ def createIDLFs(consent, fileSamples, project_name, program_name):
                 print("creating record for individual-related file:  " + file_submitter_id )
 
                 submitter.submit_record(program_name, project_name, ildf_obj)
+
+
