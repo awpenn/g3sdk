@@ -47,11 +47,33 @@ for dataset in dataset_data:
 
     submitter.create_program(program_obj)
     
-    filesAndPhenotypes = getFilesPhenotypes(dss_dataset_id) ##array of arrays, fileSamp, nonSamp, allCon, phenotypes
-    samplesAndSubjects = getSamplesSubjects(dss_dataset_id) ## sampleDict (with subject info `included`)
+    # filesAndPhenotypes = getFilesPhenotypes(dss_dataset_id) ##array of arrays, fileSamp, nonSamp, allCon, phenotypes
+    # samplesAndSubjects = getSamplesSubjects(dss_dataset_id) ## sampleDict (with subject info `included`)
     consents = getConsents(dss_dataset_id)
 
-    datasetReport(consents, program_name, filesAndPhenotypes, samplesAndSubjects)
+    ## 12/19 opening file just for dev, so dont have to go through api call process to test building
+    with open("jsondumps/samplesSubjects.json", "r") as json_file:
+        samplesAndSubjects = json.load(json_file)
+
+    with open("jsondumps/fileSamples.json", "r") as json_file:
+        filesSamples = json.load(json_file)
+
+    with open("jsondumps/fileNonSamples.json", "r") as json_file:
+        filesNonSamples = json.load(json_file)
+
+    with open("jsondumps/fileAllConsents.json", "r") as json_file:
+        filesAllConsents = json.load(json_file)
+
+    with open("jsondumps/phenotypes.json", "r") as json_file:
+        phenotypes = json.load(json_file)
+    
+    filesAndPhenotypes = [filesSamples, filesNonSamples, filesAllConsents, phenotypes]
+    # datasetReport(consents, program_name, filesAndPhenotypes, samplesAndSubjects)
+    print(str(len(samplesAndSubjects)))
+    print(str(len(filesSamples)))
+    print(str(len(filesNonSamples)))
+    print(str(len(filesAllConsents)))
+    print(str(len(phenotypes)))
 
     for consent in consents:
         createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects)

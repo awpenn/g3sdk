@@ -73,7 +73,7 @@ def datasetReport(consents, program_name, filesAndPhenotypes, samplesAndSubjects
 def getFilesPhenotypes(dss_dataset_id): 
     filesSamples = getData(dss_dataset_id, "fileSamples")
     filesNonSamples = getData(dss_dataset_id, "fileNonSamples")
-    filesAllConsent = getData(dss_dataset_id, "fileAllConsents")
+    filesAllConsents = getData(dss_dataset_id, "fileAllConsents")
     phenotypes = getData(dss_dataset_id, "phenotypes")
 
     return [filesSamples, filesNonSamples, filesAllConsent, phenotypes]
@@ -122,7 +122,9 @@ def getSamplesSubjects(dss_dataset_id):
             continue
     
         print(str(len(sample_dict)) + " subjects currently in this dataset")
-    
+    with open("jsondumps/%s.json" % "samplesSubjects", "a") as outfile:
+    # below, data from DSS api requires response.json() , from datastage = response
+        json.dump(sample_dict, outfile)
     return sample_dict
 
 def getConsents(dss_dataset_id):
@@ -160,13 +162,13 @@ def getData(dss_dataset_id, filetype):
     if 'file' in filetype:
         request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/"+filetype
     elif filetype == 'phenotypes':
-        request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/phenotypeSets/6/subjectPhenotypes?includes=phenotype,subject&per_page=11000"
+        request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/phenotypeSets/6/subjectPhenotypes?includes=phenotype,subject&per_page=9000"
 
     print('checking to see if there are data from ' + request_url)
     response = requests.get(request_url, headers=HEADERS)
     if len(response.json()["data"]) > 0:
         if filetype == 'fileSamples':
-            request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/"+filetype+"?includes=sample.subject.fullConsent&per_page=10000"
+            request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/"+filetype+"?includes=sample.subject.fullConsent&per_page=9000"
         elif 'file' in filetype:
             request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/"+filetype+"?per_page=1000"
 
@@ -196,9 +198,22 @@ def getData(dss_dataset_id, filetype):
         print('no ' + filetype + ' data, moving on...')
 
     print(str(len(data_list)) + " " + filetype + " data found for datasetVersion " + str(dss_dataset_id))
+
+    with open("jsondumps/%s.json" % filetype, "a") as outfile:
+    # below, data from DSS api requires response.json() , from datastage = response
+        json.dump(data_list, outfile)
+
     return data_list
 
+
+
+
 def createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects):
+    filesSamples = filesAndPhenotypes[0]
+    filesNonSamples = filesAndPhenotypes[1]
+    filesAllConsents = filesAndPhenotypes[2]
+    phenotypes = filesAndPhenotypes[3]
+
 
     print('Creating project for {}, consent-level {}').format(program_name, consent)
 
@@ -242,6 +257,111 @@ def createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects)
         print( "creating core_metadata_collection for " + project_name )
         submitter.submit_record(program_name, project_name, cmc_obj)
 
-        createSubjectAndAssociated(project_sample_set, filesAndPhenotypes, program_name, project_name, consent)
+        createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
+        createIDLFs(consent, fileSamples, project_name, program_name)
 
-def createSubjectAndAssociated(project_sample_set, filesAndPhenotypes, program_name, project_name, consent):
+def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id):
+    for dictkey, subject_id in enumerate(project_sample_set):
+        ## AW - why doesn't this create two subjects for subjects with multiple samples...but if tied to same subject entity (with submitter id) in db then maybe overwrites with same info?
+        for samplekey, sample in samplesAndSubjects.iteritems():
+            if sample["subject"]["key"] == subject_id:
+
+                subject = sample["subject"]
+                subject_obj = {
+                    "cohort": subject["cohort_key"], 
+                    "projects": {
+                        "id": fetched_project_id
+                    }, 
+                    "consent": subject["consent"]["key"], 
+                    "type": "subject", 
+                    "submitter_id": subject["key"]
+                }
+
+                print( "creating subject record " + subject["key"] )
+                submitter.submit_record(program_name, project_name, subject_obj)
+
+                ## create a sample node for each passing through here while we're at it
+                print( "creating sample record(s) for " + sample["key"] )
+
+                sample_obj = {
+                    "platform": sample["platform"], 
+                    "type": "sample", 
+                    "submitter_id": sample["key"], 
+                    "data_type": sample["assay"], 
+                    "sample_source": sample["source"], 
+                    "subjects": {
+                        "submitter_id": sample["subject"]["key"]
+                    }
+                }
+                # print(sample_obj) # for checking object correctness
+                submitter.submit_record(program_name, project_name, sample_obj)
+
+                current_subject_id = subject["key"]
+                current_subject_phenotypes_dict = {}
+                        
+                for pnode in phenotypes:
+                    if pnode["subject"]["key"] == current_subject_id:
+
+                        ## pname = sex/race/etchnicity/etc.
+                        ## may have to be appended with .lower() depending on how harmonized table turns out
+                        pname = pnode["phenotype"]["name"]
+                        ## index value given as phenotype value (0, 1, etc.)
+                        p_index = str(pnode["value"])
+                        ## json data dictionary attached to each phenotype
+                        p_dict = json.loads(pnode["phenotype"]["values"])
+
+                        ## makes a key/val pair in cspd dict dynamically, so don't need 6 if statements
+                        current_subject_phenotypes_dict[pname] = phenotype_prettifier( p_dict[p_index] )
+
+                phenotype_obj = {
+                    "APOE": current_subject_phenotypes_dict["APOE"], 
+                    "sex": current_subject_phenotypes_dict["Sex"], 
+                    "subjects": {
+                        "submitter_id": current_subject_id
+                    }, 
+                    "race": current_subject_phenotypes_dict["Race"], 
+                    "type": "phenotype", 
+                    "study_specific_diagnosis": current_subject_phenotypes_dict["Study_Specific_Diagnosis"], 
+                    "disease": current_subject_phenotypes_dict["Disease"], 
+                    "submitter_id": current_subject_id + "_pheno", 
+                    "ethnicity": current_subject_phenotypes_dict["Ethnicity"]
+                }
+
+                print("creating phenotype record for " + current_subject_id)
+
+                submitter.submit_record(program_name, project_name, phenotype_obj)
+
+def createIDLFs(consent, fileSamples, project_name, program_name):
+    for file in filesSamples:
+        if file["sample"]["subject"]["consent"] is not None:
+            if file["sample"]["subject"]["consent"]["key"].strip() == consent:
+                ##in DSS type=cram, index, etc., on datastage that is data_format
+                ##in datastage, file_type = this is WGS, WES, etc., which is sample.assay in dss data
+                file_name = file["name"]
+                file_format = file["type"]
+                file_id = file["id"]
+                file_submitter_id = file_name + "_" + file_format + "_" + str( file["id"] )
+                file_md5 = hashlib.md5( file_name + file_format + str(file_id) ).hexdigest()
+                            
+                        ## AW- currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
+                
+                ildf_obj = {
+                    "*data_type": file["sample"]["assay"], 
+                    "*consent": consent, 
+                    "core_metadata_collections": {
+                    "submitter_id": project_name+"_core_metadata_collection"
+                    }, 
+                    "*type": "individual_level_data_file", 
+                    "*file_path": file["path"], 
+                    "*data_format": file_format, 
+                    "*file_name": file_name, 
+                    "*md5sum": file_md5, 
+                    "*file_size": file["size"], 
+                    "*samples": {
+                    "submitter_id": file["sample"]["key"]
+                    }, 
+                    "*submitter_id": file_submitter_id
+                }
+                print("creating record for individual-related file:  " + file_submitter_id )
+
+                submitter.submit_record(program_name, project_name, ildf_obj)
