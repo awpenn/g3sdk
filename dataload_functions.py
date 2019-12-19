@@ -57,10 +57,10 @@ def build_dataset_url(dataset_name):
 
 ##returns array of arrays: fileSamp, nonSamp, allCon, phenotypes
 def getFilesPhenotypes(dss_dataset_id): 
-    filesSamples = getFiles(dss_dataset_id, "fileSamples")
-    filesNonSamples = getFiles(dss_dataset_id, "fileNonSamples")
-    filesAllConsent = getFiles(dss_dataset_id, "fileAllConsents")
-    phenotypes = getPhenotypes(dss_dataset_id)
+    filesSamples = getData(dss_dataset_id, "fileSamples")
+    filesNonSamples = getData(dss_dataset_id, "fileNonSamples")
+    filesAllConsent = getData(dss_dataset_id, "fileAllConsents")
+    phenotypes = getData(dss_dataset_id, "phenotypes")
 
     return [filesSamples, filesNonSamples, filesAllConsent, phenotypes]
 
@@ -140,25 +140,30 @@ def getConsents(dss_dataset_id):
     return dataset_consents
 
 
-def getFiles(dss_dataset_id, filetype):
-    files_list = []
-    request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/"+filetype
-    print('checking to see if there are Sample files from ' + request_url)
+def getData(dss_dataset_id, filetype):
+    data_list = []
+ 
+    if 'file' in filetype:
+        request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/"+filetype
+    elif filetype == 'phenotypes':
+        request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/phenotypeSets/6/subjectPhenotypes?includes=phenotype,subject&per_page=11000"
+
+    print('checking to see if there are data from ' + request_url)
     response = requests.get(request_url, headers=HEADERS)
     if len(response.json()["data"]) > 0:
         if filetype == 'fileSamples':
             request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/"+filetype+"?includes=sample.subject.fullConsent&per_page=10000"
-        else:
+        elif 'file' in filetype:
             request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/"+filetype+"?per_page=1000"
 
-        print( 'getting ' + filetype + ' files from ' + request_url )
+        print( 'getting ' + filetype + ' data from ' + request_url )
         response = requests.get(request_url, headers=HEADERS)
         last_page = response.json()["meta"]["last_page"]
-        files_data = response.json()["data"]
+        returned_data = response.json()["data"]
 
-        print( "api returning " + str(last_page) + " page(s) of " + filetype + " files." ) 
-        for file in files_data:
-            files_list.append(file)
+        print( "api returning " + str(last_page) + " page(s) of " + filetype + " data." ) 
+        for datum in returned_data:
+            data_list.append(datum)
             
         if last_page > 1:
             for page in range( last_page + 1 ):
@@ -167,45 +172,17 @@ def getFiles(dss_dataset_id, filetype):
                 else:
                     response = requests.get(request_url + "&page=" + str(page), headers=HEADERS)
                     print('getting paginated data from ' + request_url + "&page=" + str(page))
-                    files_data = response.json()["data"]
+                    returned_data = response.json()["data"]
 
-                    for file in files_data:
-                        files_list.append(file)
+                    for datum in returned_data:
+                        data_list.append(datum)
                 
-                print('length of filelist after page ' + str(page) + ": " + str(len(files_list)))
+                print('length of data_list after page ' + str(page) + ": " + str(len(data_list)))
     else:
-        print('no ' + filetype + ' files, moving on...')
+        print('no ' + filetype + ' data, moving on...')
 
-    print(str(len(files_list)) + " " + filetype + " file(s) found for datasetVersion " + str(dss_dataset_id))
-    return files_list
-
-def getPhenotypes(dss_dataset_id):
-    project_phenotype_list = []
-
-    request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/phenotypeSets/6/subjectPhenotypes?includes=phenotype,subject&per_page=11000"
-    response = requests.get(request_url, headers=HEADERS)
-    last_page = response.json()["meta"]["last_page"]
-    phenotype_data = response.json()["data"]
-
-    ## this list is all the phenotype nodes from all the pages
-    print( "creating phenotype list for datasetVersion " + str(dss_dataset_id) )
-    print( "api returning " + str(last_page) + " page(s) of phenotypes" ) 
-
-    for phenotype in phenotype_data:
-        project_phenotype_list.append(phenotype)
-
-    if last_page > 1:
-        for page in range( last_page + 1 ):
-            if page < 2:
-                continue
-            else:
-                response = requests.get(request_url+"&page="+str(page), headers=HEADERS)
-                print('phenotypes from this string ' + request_url+"&page="+str(page))
-                phenotype_data = response.json()["data"]
-                for phenotype in phenotype_data:
-                    project_phenotype_list.append(phenotype)
-    
-    return project_phenotype_list
+    print(str(len(data_list)) + " " + filetype + " data found for datasetVersion " + str(dss_dataset_id))
+    return data_list
 
 def createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects):
     sampleFiles = filesAndPhenotypes[0]
