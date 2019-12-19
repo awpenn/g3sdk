@@ -75,7 +75,13 @@ for dataset in dataset_data:
     print(str(len(filesAllConsents)))
     print(str(len(phenotypes)))
 
+    consentsParallelLoader = []
+    ## 12/19 this doesnt seem to work - maybe arguments passed in incorrectly
     for consent in consents:
-        createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects)
+        consentsParallelLoader.append(createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects))
+    
+    runInParallel(consentsParallelLoader)
+    # for consent in consents:
+    #     createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects)
     
 

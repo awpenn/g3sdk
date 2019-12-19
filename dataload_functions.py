@@ -52,6 +52,15 @@ def phenotype_prettifier(rawInput):
     return " ".join(word_list)
 
 
+def runInParallel(*fns):
+  proc = []
+  for fn in fns:
+    p = Process(target=fn)
+    p.start()
+    proc.append(p)
+  for p in proc:
+    p.join()
+
 def build_dataset_url(dataset_name):
     dataset_url_base = "https://dss.naigads.org/datasets/"
 
@@ -264,7 +273,7 @@ def createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects)
         print( "creating core_metadata_collection for " + project_name )
         submitter.submit_record(program_name, project_name, cmc_obj)
 
-        # createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
+        createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
 
         ## node generation with multiprocessing
         p1 = Process(target=createIDLFs, args=(consent, filesSamples, project_name, program_name))
@@ -357,7 +366,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                     print("creating phenotype record for " + current_subject_id)
 
                     submitter.submit_record(program_name, project_name, phenotype_obj)
-                
+
                 create_subject()
                 create_sample()
                 create_phenotype()
