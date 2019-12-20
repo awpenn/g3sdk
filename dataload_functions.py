@@ -52,14 +52,15 @@ def phenotype_prettifier(rawInput):
     return " ".join(word_list)
 
 
-def runInParallel(*fns):
-  proc = []
-  for fn in fns:
-    p = Process(target=fn)
-    p.start()
-    proc.append(p)
-  for p in proc:
-    p.join()
+def runInParallel(fn, args_list):
+    proc = []
+
+    for consent_args in args_list:
+        p = Process(target=fn, args=[consent_args])
+        p.start()
+        proc.append(p)
+    for p in proc:
+        p.join()
 
 def build_dataset_url(dataset_name):
     dataset_url_base = "https://dss.naigads.org/datasets/"
@@ -222,16 +223,20 @@ def getData(dss_dataset_id, filetype):
 
 
 
-
-def createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects):
-    print('Starting project {} build at {}').format(consent, calendar.timegm(time.gmtime()))
+## [consent, program_name, filesAndPhenotypes, samplesAndSubjects]
+def createProject(arr):
+    consent = arr[0]
+    program_name = arr[1]
+    filesAndPhenotypes = arr[2]
     filesSamples = filesAndPhenotypes[0]
     filesNonSamples = filesAndPhenotypes[1]
     filesAllConsents = filesAndPhenotypes[2]
     phenotypes = filesAndPhenotypes[3]
+    samplesAndSubjects = arr[3]
 
 
-    print('Creating project for {}, consent-level {}').format(program_name, consent)
+    print('Creating project for {} in {}').format(consent, program_name)
+    print('Starting project {} build at {}').format(consent, calendar.timegm(time.gmtime()))
 
     project_sample_set = set({})
     for key, sample in samplesAndSubjects.iteritems():
@@ -258,6 +263,7 @@ def createProject(consent, program_name, filesAndPhenotypes, samplesAndSubjects)
         ## create CMC for each created project
 
         query = '{project(name:\"%s\"){id}}' % project_name
+        print(query)
         fetched_project_id = submitter.query(query)["data"]["project"][0]["id"]
 
         cmc_obj = {
