@@ -51,6 +51,10 @@ def phenotype_prettifier(rawInput):
     checkForSlash(rawInput)
     return " ".join(word_list)
 
+def partition(consents):
+    consents_per_chunk = 3
+    for i in range(0, len(consents), consents_per_chunk):
+        yield consents[i:i + consents_per_chunk]
 
 def runInParallel(fn, args_list):
     proc = []

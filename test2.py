@@ -81,13 +81,14 @@ def populate_datastage():
         print(str(len(filesAllConsents)))
         print(str(len(phenotypes)))
 
-        parallelArgs = []
-        ## 12/20 works, all running in parallel but S-L-O-W
-        for consent in consents:
-            parallelArgs.append([consent, program_name, filesAndPhenotypes, samplesAndSubjects])
+        chunked_consents = list (partition(consents)) ## currently set to divide into groups of 3
 
-        runInParallel(createProject, parallelArgs)
+        for chunk in chunked_consents:
+            parallelArgs = []
+            for consent in chunk:
+                parallelArgs.append([consent, program_name, filesAndPhenotypes, samplesAndSubjects])
+            ## runs three createProjects at once, early tests indicate marked speed increase (3.5 hrs vs 12)
+            runInParallel(createProject, parallelArgs)
             
-
 if __name__ == '__main__':
     populate_datastage()
