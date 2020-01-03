@@ -148,8 +148,10 @@ def getSamplesSubjects(dss_dataset_id):
     return sample_dict
 
 def getConsents(dss_dataset_id):
-    dataset_consents = []
-
+    dataset_consents_unordered = []
+    dataset_consents_tuples = []
+    dataset_consents_ordered = []
+    
             ##tested versioning-compliant url = https://dev3.niagads.org/darm/api/datasetVersions/{id}/consents
     request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/consents"
     response = requests.get(request_url, headers=HEADERS)
@@ -158,7 +160,7 @@ def getConsents(dss_dataset_id):
     consent_data = response.json()["data"]
     ## gets the data from first return regardless of need for paginated retrieval
     for consent in consent_data:
-        dataset_consents.append(consent["key"])
+        dataset_consents_unordered.append(consent["key"])
 
     if last_page > 1:
         for page in range( last_page + 1 ):
@@ -169,11 +171,25 @@ def getConsents(dss_dataset_id):
                 print('getting paginated data from ' + request_url + "?page=" + str(page))
                 consent_data = response.json()["data"]
                 for consent in consent_data:
-                    dataset_consents.append(consent["key"])
+                    dataset_consents_unordered.append(consent["key"])
 
-    print(str(len(dataset_consents)) + " consent(s) where found for datasetVersion " + str( dss_dataset_id ) )
+    print(str(len(dataset_consents_unordered)) + " consent(s) where found for datasetVersion " + str( dss_dataset_id ) )
 
-    return dataset_consents
+    ## gets subject count for each, makes tuple so can order consent levels in ASC by the count
+    for consent in dataset_consents_unordered:
+        request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/subjects?consent_key:eq:="+consent
+        response = requests.get(request_url, headers=HEADERS)
+        consent_subject_count = response.json()["meta"]["total"]
+
+        ctup = (consent_subject_count, consent)
+        dataset_consents_tuples.append((consent_subject_count, consent))
+
+    dataset_consents_tuples.sort()
+
+    for consent_tuple in dataset_consents_tuples:
+        dataset_consents_ordered.append(consent_tuple[1])
+    
+    return dataset_consents_ordered
 
 
 def getData(dss_dataset_id, filetype):
