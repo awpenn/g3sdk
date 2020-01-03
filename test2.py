@@ -26,6 +26,26 @@ print(APIURL+"datasets?includes=datasetVersions")
 dataset_data = response.json()['data']
 
 def populate_datastage():
+    def openFiles():
+    ## 12/19 opening file just for dev, so dont have to go through api call process to test building
+        with open("jsondumps/samplesSubjects.json", "r") as json_file:
+            samplesAndSubjects = json.load(json_file)
+
+        with open("jsondumps/fileSamples.json", "r") as json_file:
+            filesSamples = json.load(json_file)
+
+        with open("jsondumps/fileNonSamples.json", "r") as json_file:
+            filesNonSamples = json.load(json_file)
+
+        with open("jsondumps/fileAllConsents.json", "r") as json_file:
+            filesAllConsents = json.load(json_file)
+
+        with open("jsondumps/phenotypes.json", "r") as json_file:
+            phenotypes = json.load(json_file)
+                
+        filesAndPhenotypes = [filesSamples, filesNonSamples, filesAllConsents, phenotypes]
+        
+        return [filesAndPhenotypes, samplesAndSubjects]
 
     for dataset in dataset_data:
         ## dss_dataset_id = dataset["id"]
@@ -52,34 +72,24 @@ def populate_datastage():
 
         submitter.create_program(program_obj)
         
+        ## to run with calls API, uncomment the two function calls below and comment out the `openFiles` and related functions
         # filesAndPhenotypes = getFilesPhenotypes(dss_dataset_id) ##array of arrays, fileSamp, nonSamp, allCon, phenotypes
         # samplesAndSubjects = getSamplesSubjects(dss_dataset_id) ## sampleDict (with subject info `included`)
         consents = getConsents(dss_dataset_id)
+        dataFromFiles = openFiles()
 
-        ## 12/19 opening file just for dev, so dont have to go through api call process to test building
-        with open("jsondumps/samplesSubjects.json", "r") as json_file:
-            samplesAndSubjects = json.load(json_file)
+        filesAndPhenotypes = dataFromFiles[0]
+        samplesAndSubjects = dataFromFiles[1]
 
-        with open("jsondumps/fileSamples.json", "r") as json_file:
-            filesSamples = json.load(json_file)
 
-        with open("jsondumps/fileNonSamples.json", "r") as json_file:
-            filesNonSamples = json.load(json_file)
-
-        with open("jsondumps/fileAllConsents.json", "r") as json_file:
-            filesAllConsents = json.load(json_file)
-
-        with open("jsondumps/phenotypes.json", "r") as json_file:
-            phenotypes = json.load(json_file)
-        
-        filesAndPhenotypes = [filesSamples, filesNonSamples, filesAllConsents, phenotypes]
         # datasetReport(consents, program_name, filesAndPhenotypes, samplesAndSubjects)
+
         print('Data to be loaded for dataset {}').format(program_name)
         print(str(len(samplesAndSubjects)))
-        print(str(len(filesSamples)))
-        print(str(len(filesNonSamples)))
-        print(str(len(filesAllConsents)))
-        print(str(len(phenotypes)))
+        print(str(len(filesAndPhenotypes[0])))
+        print(str(len(filesAndPhenotypes[1])))
+        print(str(len(filesAndPhenotypes[2])))
+        print(str(len(filesAndPhenotypes[3])))
 
         chunked_consents = list (partition(consents)) ## currently set to divide into groups of 3
 
