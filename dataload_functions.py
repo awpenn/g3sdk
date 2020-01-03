@@ -185,6 +185,7 @@ def getConsents(dss_dataset_id):
         dataset_consents_tuples.append((consent_subject_count, consent))
 
     dataset_consents_tuples.sort()
+    dataset_consents_tuples.reverse()
 
     for consent_tuple in dataset_consents_tuples:
         dataset_consents_ordered.append(consent_tuple[1])
