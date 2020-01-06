@@ -185,7 +185,7 @@ def getConsents(dss_dataset_id):
         dataset_consents_tuples.append((consent_subject_count, consent))
 
     dataset_consents_tuples.sort()
-    dataset_consents_tuples.reverse()
+    # dataset_consents_tuples.reverse()
 
     for consent_tuple in dataset_consents_tuples:
         dataset_consents_ordered.append(consent_tuple[1])
@@ -427,6 +427,7 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
                     "*samples": {
                     "submitter_id": file["sample"]["key"]
                     }, 
+                    "fileset": file["fileset"]["accession"]
                     "*submitter_id": file_submitter_id
                 }
                 print("creating record for individual-related file:  " + file_submitter_id )
@@ -461,7 +462,8 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
                         "*data_format": file_format, 
                         "*md5sum": file_md5, 
                         "*file_size": file["size"], 
-                        "*submitter_id": file_submitter_id, 
+                        "*submitter_id": file_submitter_id,
+                        "fileset": file["fileset"]["accession"] 
                         "*file_name": file_name
                     }
                             
