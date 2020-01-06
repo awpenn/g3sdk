@@ -85,12 +85,12 @@ def populate_datastage():
 
         # datasetReport(consents, program_name, filesAndPhenotypes, samplesAndSubjects)
 
-        # print('Data to be loaded for dataset {}').format(program_name)
-        # print(str(len(samplesAndSubjects)))
-        # print(str(len(filesAndPhenotypes[0])))
-        # print(str(len(filesAndPhenotypes[1])))
-        # print(str(len(filesAndPhenotypes[2])))
-        # print(str(len(filesAndPhenotypes[3])))
+        print('Data to be loaded for dataset {}').format(program_name)
+        print(str(len(samplesAndSubjects)))
+        print(str(len(filesAndPhenotypes[0])))
+        print(str(len(filesAndPhenotypes[1])))
+        print(str(len(filesAndPhenotypes[2])))
+        print(str(len(filesAndPhenotypes[3])))
 
         chunked_consents = list (partition(consents)) ## currently set to divide into groups of 3
 
