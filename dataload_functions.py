@@ -427,7 +427,7 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
                     "*samples": {
                     "submitter_id": file["sample"]["key"]
                     }, 
-                    "fileset": file["fileset"]["accession"]
+                    "fileset": file["fileset"]["accession"],
                     "*submitter_id": file_submitter_id
                 }
                 print("creating record for individual-related file:  " + file_submitter_id )
@@ -463,7 +463,7 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
                         "*md5sum": file_md5, 
                         "*file_size": file["size"], 
                         "*submitter_id": file_submitter_id,
-                        "fileset": file["fileset"]["accession"] 
+                        "fileset": file["fileset"]["accession"],
                         "*file_name": file_name
                     }
                             

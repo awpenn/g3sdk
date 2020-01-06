@@ -73,24 +73,24 @@ def populate_datastage():
         submitter.create_program(program_obj)
         
         ## to run with calls API, uncomment the two function calls below and comment out the `openFiles` and related functions
-        # filesAndPhenotypes = getFilesPhenotypes(dss_dataset_id) ##array of arrays, fileSamp, nonSamp, allCon, phenotypes
-        # samplesAndSubjects = getSamplesSubjects(dss_dataset_id) ## sampleDict (with subject info `included`)
+        filesAndPhenotypes = getFilesPhenotypes(dss_dataset_id) ##array of arrays, fileSamp, nonSamp, allCon, phenotypes
+        samplesAndSubjects = getSamplesSubjects(dss_dataset_id) ## sampleDict (with subject info `included`)
         
         consents = getConsents(dss_dataset_id)
-        dataFromFiles = openFiles()
+        # dataFromFiles = openFiles()
 
-        filesAndPhenotypes = dataFromFiles[0]
-        samplesAndSubjects = dataFromFiles[1]
+        # filesAndPhenotypes = dataFromFiles[0]
+        # samplesAndSubjects = dataFromFiles[1]
 
 
         # datasetReport(consents, program_name, filesAndPhenotypes, samplesAndSubjects)
 
-        print('Data to be loaded for dataset {}').format(program_name)
-        print(str(len(samplesAndSubjects)))
-        print(str(len(filesAndPhenotypes[0])))
-        print(str(len(filesAndPhenotypes[1])))
-        print(str(len(filesAndPhenotypes[2])))
-        print(str(len(filesAndPhenotypes[3])))
+        # print('Data to be loaded for dataset {}').format(program_name)
+        # print(str(len(samplesAndSubjects)))
+        # print(str(len(filesAndPhenotypes[0])))
+        # print(str(len(filesAndPhenotypes[1])))
+        # print(str(len(filesAndPhenotypes[2])))
+        # print(str(len(filesAndPhenotypes[3])))
 
         chunked_consents = list (partition(consents)) ## currently set to divide into groups of 3
 
