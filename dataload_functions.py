@@ -205,9 +205,9 @@ def getData(dss_dataset_id, filetype):
     response = requests.get(request_url, headers=HEADERS)
     if len(response.json()["data"]) > 0:
         if filetype == 'fileSamples':
-            request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/"+filetype+"?includes=sample.subject.fullConsent&per_page=9000"
+            request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/"+filetype+"?includes=sample.subject.fullConsent,fileset&per_page=9000"
         elif 'file' in filetype:
-            request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/"+filetype+"?per_page=1000"
+            request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/"+filetype+"?includes=fileset&per_page=1000"
 
         print( 'getting ' + filetype + ' data from ' + request_url )
         response = requests.get(request_url, headers=HEADERS)
