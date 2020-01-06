@@ -96,7 +96,7 @@ def getFilesPhenotypes(dss_dataset_id):
     filesAllConsents = getData(dss_dataset_id, "fileAllConsents")
     phenotypes = getData(dss_dataset_id, "phenotypes")
 
-    return [filesSamples, filesNonSamples, filesAllConsent, phenotypes]
+    return [filesSamples, filesNonSamples, filesAllConsents, phenotypes]
 
 ## returns sampleDict (with subject info `included`)
 def getSamplesSubjects(dss_dataset_id):
