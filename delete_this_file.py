@@ -1,4 +1,49 @@
 """subject/sample code"""
+def run_subject_writer(consent="HMB-IRB-PUB"):
+    subject_array = []
+
+    def create_subject(subject, current_subject_id):
+        fetched_project_id = "218603c7-fe41-56e9-9ccd-f08daf002162"
+        subject_obj = {
+            "cohort": subject["cohort_key"], 
+            "projects": {
+                "id": fetched_project_id
+            }, 
+            "consent": subject["consent"]["key"], 
+            "type": "subject", 
+             "submitter_id": subject["key"]
+        }
+        subject_array.append(subject_obj)
+        
+    project_sample_set = set({})
+    with open("jsondumps/samplesSubjects.json", "r") as json_file:    
+        samplesAndSubjects = json.load(json_file)
+
+    for key, sample in samplesAndSubjects.iteritems():
+        ## some subjects have 'null' consent, ignoring for now
+        if sample["subject"]["consent"] is not None:
+            ## if the subject's consent matches the current project, add to the pss set
+            if sample["subject"]["consent"]["key"].strip() == consent:
+                project_sample_set.add( sample["subject"]["key"] )
+    
+    for dictkey, subject_id in enumerate(project_sample_set):
+        ## AW - why doesn't this create two subjects for subjects with multiple samples...but if tied to same subject entity (with submitter id) in db then maybe overwrites with same info?
+
+        for samplekey, sample in samplesAndSubjects.iteritems():
+            if sample["subject"]["key"] == subject_id:
+                subject = sample["subject"]
+                current_subject_id = subject["key"]
+
+                create_subject(subject, current_subject_id)
+
+            if len(subject_array) > 0 and len(subject_array) % 5 == 0:
+                print('-----')
+                print(subject_array)
+                # submitter.submit_record(program_name, project_name, sample_array)
+                print('sending 5 samples')
+                subject_array = []
+                print(subject_array)
+
 
 
 """phenotype code""""
