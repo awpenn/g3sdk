@@ -321,6 +321,11 @@ def createProject(arr):
         # createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
 
 def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id):
+    """for handling the batching"""
+    phenotype_array = []
+    phenotype_batch_ids = []
+    batch_size = 20
+
     for dictkey, subject_id in enumerate(project_sample_set):
         ## AW - why doesn't this create two subjects for subjects with multiple samples...but if tied to same subject entity (with submitter id) in db then maybe overwrites with same info?
         for samplekey, sample in samplesAndSubjects.iteritems():
