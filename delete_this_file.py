@@ -22,13 +22,20 @@ auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 submitter = Gen3Submission(endpoint, auth)
 
 
-
-
 def run_phenotype_writer(consent="DS-ND-IRB-PUB"):
     phenotype_array = []
+    batch_ids = []
+    batch_size = 20
+    
+    def send_phenotypes():
+        print('-----')
+        print(phenotype_array)
+        # submitter.submit_record(program_name, project_name, sample_array)
+        print('sending ' + str(len(phenotype_array)) + ' phenotypes')
+        del phenotype_array[:]
+        del batch_ids[:]
 
     def create_phenotype(current_subject_phenotypes_dict, current_subject_id):
-
         phenotype_obj = {
             "APOE": current_subject_phenotypes_dict["APOE"], 
             "sex": current_subject_phenotypes_dict["Sex"], 
@@ -43,8 +50,15 @@ def run_phenotype_writer(consent="DS-ND-IRB-PUB"):
             "ethnicity": current_subject_phenotypes_dict["Ethnicity"]
         }
 
-        phenotype_array.append(phenotype_obj)
+        if not batch_ids:
+            print('phenotype added to array')
+            batch_ids.append(current_subject_id)
+            phenotype_array.append(phenotype_obj)
 
+        elif current_subject_id not in batch_ids:
+            print('phenotype added to array')
+            batch_ids.append(current_subject_id)
+            phenotype_array.append(phenotype_obj)
         
     project_sample_set = set({})
     with open("jsondumps/samplesSubjects.json", "r") as json_file:    
@@ -70,11 +84,11 @@ def run_phenotype_writer(consent="DS-ND-IRB-PUB"):
                 current_subject_id = subject["key"]
 
                 current_subject_phenotypes_dict = {}
-
+                
                 for pnode in phenotypes:
                     
                     if pnode["subject"]["key"] == current_subject_id:
-                        print('match ' + pnode["subject"]["key"])
+                        # print('match ' + pnode["subject"]["key"])
                         ## pname = sex/race/etchnicity/etc.
                         ## may have to be appended with .lower() depending on how harmonized table turns out
                         pname = pnode["phenotype"]["name"]
@@ -88,14 +102,16 @@ def run_phenotype_writer(consent="DS-ND-IRB-PUB"):
                 
                 create_phenotype(current_subject_phenotypes_dict, current_subject_id)
 
-            if len(phenotype_array) > 0 and len(phenotype_array) % 5 == 0:
-                print('-----')
-                print(phenotype_array)
-                # submitter.submit_record(program_name, project_name, sample_array)
-                print('sending 3 phenotypes')
-                phenotype_array = []
-                print(phenotype_array)
+            if len(phenotype_array) > 0 and len(phenotype_array) % batch_size == 0:
+                print('sending from the modulo based if')
+                send_phenotypes()
 
+                print("p_a cleared: " + str(len(phenotype_array)) + ", " + "b_i cleared: " + str(len(batch_ids)))
+
+    """need to account for the last batch being under the batch_size or the total subjects not filling a full batch"""
+    if len(phenotype_array) > 0:
+        print('sending from the if statement outside of loop')
+        send_phenotypes()
 
 def build_sample_file():
     subjectsAndSamples = getSamplesSubjects(1)
