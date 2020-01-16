@@ -185,7 +185,7 @@ def getConsents(dss_dataset_id):
         dataset_consents_tuples.append((consent_subject_count, consent))
 
     dataset_consents_tuples.sort()
-    # dataset_consents_tuples.reverse()
+    dataset_consents_tuples.reverse()
 
     for consent_tuple in dataset_consents_tuples:
         dataset_consents_ordered.append(consent_tuple[1])
@@ -321,19 +321,39 @@ def createProject(arr):
         # createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
 
 def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id):
+
     """for handling the batching"""
     subject_array = []
+    subject_batch_ids = []
+
     sample_array = []
+    sample_batch_ids = []
 
     phenotype_array = []
     phenotype_batch_ids = []
+
     batch_size = 20
 
-    def send_subject():
+    def send_subjects():
+        print('sending ' + str(len(subject_array)) + ' subjects')
+        print(subject_array)
+        submitter.submit_record(program_name, project_name, subject_array)
+        del subject_array[:]
+        del subject_batch_ids[:]
 
-    def send_sample():
+    def send_samples():
+        print('sending ' + str(len(sample_array)) + ' samples')
+        print(sample_array)
+        submitter.submit_record(program_name, project_name, sample_array)
+        del sample_array[:]
+        del sample_batch_ids[:]
 
-    def send_phenotype():
+    def send_phenotypes():
+        print('sending ' + str(len(phenotype_array)) + ' phenotypes')
+        print(phenotype_array)
+        submitter.submit_record(program_name, project_name, phenotype_array)
+        del phenotype_array[:]
+        del phenotype_batch_ids[:]
 
 
     for dictkey, subject_id in enumerate(project_sample_set):
@@ -345,6 +365,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                 current_subject_id = subject["key"]
 
                 def create_subject():
+                    print( "creating subject record " + subject["key"] )
                     subject_obj = {
                         "cohort": subject["cohort_key"], 
                         "projects": {
@@ -355,8 +376,14 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                         "submitter_id": subject["key"]
                     }
 
-                    print( "creating subject record " + subject["key"] )
-                    submitter.submit_record(program_name, project_name, subject_obj)
+                    # submitter.submit_record(program_name, project_name, subject_obj)
+                    if not subject_batch_ids:
+                        subject_batch_ids.append(current_subject_id)
+                        subject_array.append(subject_obj)
+
+                    elif current_subject_id not in subject_batch_ids:
+                        subject_batch_ids.append(current_subject_id)
+                        subject_array.append(subject_obj)
 
                 def create_sample():
                     print( "creating sample record(s) for " + sample["key"] )
@@ -372,10 +399,18 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                         }
                     }
                     # print(sample_obj) # for checking object correctness
-                    submitter.submit_record(program_name, project_name, sample_obj)
+                    # submitter.submit_record(program_name, project_name, sample_obj)
+                    if not sample_batch_ids:
+                        sample_batch_ids.append(sample["key"])
+                        sample_array.append(sample_obj)
+
+                    elif current_subject_id not in phenotype_batch_ids:
+                        sample_batch_ids.append(sample["key"])
+                        sample_array.append(sample_obj)
 
                 def create_phenotype():
                     current_subject_phenotypes_dict = {}
+                    print("creating phenotype record for " + current_subject_id)
                             
                     for pnode in phenotypes:
                         if pnode["subject"]["key"] == current_subject_id:
@@ -405,14 +440,42 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                         "ethnicity": current_subject_phenotypes_dict["Ethnicity"]
                     }
 
-                    print("creating phenotype record for " + current_subject_id)
+                    if not phenotype_batch_ids:
+                        phenotype_batch_ids.append(current_subject_id)
+                        phenotype_array.append(phenotype_obj)
 
-                    submitter.submit_record(program_name, project_name, phenotype_obj)
+                    elif current_subject_id not in phenotype_batch_ids:
+                        phenotype_batch_ids.append(current_subject_id)
+                        phenotype_array.append(phenotype_obj)
 
                 create_subject()
+                if len(subject_array) > 0 and len(subject_array) % batch_size == 0:
+                    print('---sending from the modulo based if statement')
+                    send_subjects()
+
                 create_sample()
+                if len(sample_array) > 0 and len(sample_array) % batch_size == 0:
+                    print('---sending from the modulo based if statement')
+                    send_samples()
+
                 create_phenotype()
-                
+                if len(phenotype_array) > 0 and len(phenotype_array) % batch_size == 0:
+                    print('---sending from the modulo based if statement')
+                    send_phenotypes()
+
+    if len(subject_array) > 0:
+        print('sending remaining subjects, outside of batch-size constraint')
+        send_subjects()
+
+    if len(sample_array) > 0:
+        print('sending remaining, outside of batch-size constraint')
+        send_samples()
+
+    if len(phenotype_array) > 0:
+        print('sending remaining, outside of batch-size constraint')
+        send_phenotypes()
+
+
 def createIDLFs(consent, filesSamples, project_name, program_name):
     for file in filesSamples:
         if file["sample"]["subject"]["consent"] is not None:
