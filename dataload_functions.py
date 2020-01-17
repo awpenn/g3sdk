@@ -8,7 +8,7 @@ import requests
 import hashlib
 
 import calendar
-import time
+from datetime import datetime
 
 import threading
 from multiprocessing import Process
@@ -52,7 +52,7 @@ def phenotype_prettifier(rawInput):
     return " ".join(word_list)
 
 def partition(consents):
-    consents_per_chunk = 3
+    consents_per_chunk = 1
     for i in range(0, len(consents), consents_per_chunk):
         yield consents[i:i + consents_per_chunk]
 
@@ -155,7 +155,7 @@ def getConsents(dss_dataset_id):
             ##tested versioning-compliant url = https://dev3.niagads.org/darm/api/datasetVersions/{id}/consents
     request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/consents"
     response = requests.get(request_url, headers=HEADERS)
-    print('Checking for datasets consent levels')
+    # print('Checking for datasets consent levels')
     last_page = response.json()["meta"]["last_page"]
     consent_data = response.json()["data"]
     ## gets the data from first return regardless of need for paginated retrieval
@@ -168,7 +168,7 @@ def getConsents(dss_dataset_id):
                 continue
             else:
                 response = requests.get(request_url + "?page=" + str(page), headers=HEADERS)
-                print('getting paginated data from ' + request_url + "?page=" + str(page))
+                # print('getting paginated data from ' + request_url + "?page=" + str(page))
                 consent_data = response.json()["data"]
                 for consent in consent_data:
                     dataset_consents_unordered.append(consent["key"])
@@ -258,9 +258,10 @@ def createProject(arr):
     phenotypes = filesAndPhenotypes[3]
     samplesAndSubjects = arr[3]
 
-
-    print('Creating project for {} in {}').format(consent, program_name)
-    print('Starting project {} build at {}').format(consent, calendar.timegm(time.gmtime()))
+    now = datetime.now()
+    printime = now.strftime("%H:%M:%S")
+    print('\n--Creating project for {} in {} and {}').format(consent, program_name, printime)
+    # print('Starting project {} build at {}').format(consent, calendar.timegm(time.gmtime()))
 
     project_sample_set = set({})
     for key, sample in samplesAndSubjects.iteritems():
@@ -270,7 +271,7 @@ def createProject(arr):
             if sample["subject"]["consent"]["key"].strip() == consent:
                 project_sample_set.add( sample["subject"]["key"] )
 
-    print('creating project, {} unique subject ids found').format(str(len(project_sample_set)))
+    # print('creating project, {} unique subject ids found').format(str(len(project_sample_set)))
 
     if len(project_sample_set) > 0:
         project_name = program_name+"_"+consent
@@ -281,13 +282,13 @@ def createProject(arr):
             "code": project_name,
             "availability_type": "Restricted"
         }
-        print( "Creating project node for " + project_name )
+
         submitter.create_project(program_name, project_obj)
 
         ## create CMC for each created project
 
         query = '{project(name:\"%s\"){id}}' % project_name
-        print(query)
+        # print(query)
         fetched_project_id = submitter.query(query)["data"]["project"][0]["id"]
 
         cmc_obj = {
@@ -300,7 +301,7 @@ def createProject(arr):
             }
         }
 
-        print( "creating core_metadata_collection for " + project_name )
+        # print( "creating core_metadata_collection for " + project_name )
         submitter.submit_record(program_name, project_name, cmc_obj)
 
         createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
@@ -338,22 +339,22 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
     batch_size = 250
 
     def send_subjects():
-        print('sending ' + str(len(subject_array)) + ' subjects')
-        print(subject_array)
+        print('sending ' + str(len(subject_array)) + ' subjects' + ' for project ' + consent)
+        # print(subject_array)
         submitter.submit_record(program_name, project_name, subject_array)
         del subject_array[:]
         del subject_batch_ids[:]
 
     def send_samples():
-        print('sending ' + str(len(sample_array)) + ' samples')
-        print(sample_array)
+        print('sending ' + str(len(sample_array)) + ' samples' + ' for project ' + consent)
+        # print(sample_array)
         submitter.submit_record(program_name, project_name, sample_array)
         del sample_array[:]
         del sample_batch_ids[:]
 
     def send_phenotypes():
-        print('sending ' + str(len(phenotype_array)) + ' phenotypes')
-        print(phenotype_array)
+        print('sending ' + str(len(phenotype_array)) + ' phenotypes' + ' for project ' + consent)
+        # print(phenotype_array)
         submitter.submit_record(program_name, project_name, phenotype_array)
         del phenotype_array[:]
         del phenotype_batch_ids[:]
@@ -368,7 +369,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                 current_subject_id = subject["key"]
 
                 def create_subject():
-                    print( "creating subject record " + subject["key"] )
+                    # print( "creating subject record " + subject["key"] )
                     subject_obj = {
                         "cohort": subject["cohort_key"], 
                         "projects": {
@@ -389,7 +390,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                         subject_array.append(subject_obj)
 
                 def create_sample():
-                    print( "creating sample record(s) for " + sample["key"] )
+                    # print( "creating sample record(s) for " + sample["key"] )
 
                     sample_obj = {
                         "platform": sample["platform"], 
@@ -413,7 +414,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
 
                 def create_phenotype():
                     current_subject_phenotypes_dict = {}
-                    print("creating phenotype record for " + current_subject_id)
+                    # print("creating phenotype record for " + current_subject_id)
                             
                     for pnode in phenotypes:
                         if pnode["subject"]["key"] == current_subject_id:
@@ -453,7 +454,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
 
                 create_subject()
                 if len(subject_array) > 0 and len(subject_array) >= batch_size:
-                    print('---sending from the modulo based if statement')
+                    # print('---sending from the modulo based if statement')
                     send_subjects()
 
                 create_sample()
@@ -461,24 +462,24 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                     
                     """make sure dont try to create samples with no subject yet"""
                     if len(subject_array) < 10:
-                        print('---sending from the modulo based if statement')
+                        # print('---sending from the modulo based if statement')
                         send_samples()
 
                 create_phenotype()
                 if len(phenotype_array) > 0 and len(phenotype_array) >= batch_size:
-                    print('---sending from the modulo based if statement')
+                    # print('---sending from the modulo based if statement')
                     send_phenotypes()
 
     if len(subject_array) > 0:
-        print('sending remaining subjects, outside of batch-size constraint')
+        # print('sending remaining subjects, outside of batch-size constraint')
         send_subjects()
 
     if len(sample_array) > 0:
-        print('sending remaining, outside of batch-size constraint')
+        # print('sending remaining, outside of batch-size constraint')
         send_samples()
 
     if len(phenotype_array) > 0:
-        print('sending remaining, outside of batch-size constraint')
+        # print('sending remaining, outside of batch-size constraint')
         send_phenotypes()
 
 
@@ -488,8 +489,8 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
     fileSamples_batch_ids = []
 
     def send_fileSamples():
-        print('sending ' + str(len(fileSamples_array)) + ' fileSamples')
-        print(fileSamples_array)
+        print('sending ' + str(len(fileSamples_array)) + ' fileSamples' + ' to ' + consent)
+        # print(fileSamples_array)
 
         submitter.submit_record(program_name, project_name, fileSamples_array)  
 
@@ -527,7 +528,7 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
                     "*submitter_id": file_submitter_id
                 }
 
-                print("creating record for individual-related file:  " + file_submitter_id )
+                # print("creating record for individual-related file:  " + file_submitter_id )
                 if not fileSamples_batch_ids:
                     fileSamples_batch_ids.append(file_submitter_id)
                     fileSamples_array.append(ildf_obj)
@@ -551,15 +552,15 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
     fileAllConsents_batch_ids = []
 
     def send_fileNonSamples():
-        print('sending ' + str(len(fileNonSamples_array)) + ' file_NonSamples')
-        print(fileNonSamples_array)
+        print('sending ' + str(len(fileNonSamples_array)) + ' file_NonSamples' + ' to ' + consent)
+        # print(fileNonSamples_array)
         submitter.submit_record(program_name, project_name, fileNonSamples_array)
         del fileNonSamples_array[:]
         del fileNonSamples_batch_ids[:]
 
     def send_fileAllConsents():
-        print('sending ' + str(len(fileAllConsents_array)) + ' fileAllConsents')
-        print(fileAllConsents_array)
+        print('sending ' + str(len(fileAllConsents_array)) + ' fileAllConsents' + ' to ' + consent)
+        # print(fileAllConsents_array)
         submitter.submit_record(program_name, project_name, fileAllConsents_array)
         del fileAllConsents_array[:]
         del fileAllConsents_batch_ids[:]
@@ -595,7 +596,7 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
                         "*file_name": file_name
                     }
                             
-                    print("creating record for non-sample file:  " + file_submitter_id )
+                    # print("creating record for non-sample file:  " + file_submitter_id )
                     # submitter.submit_record(program_name, project_name, aldf_obj)
                     if not fileNonSamples_batch_ids:
                         fileNonSamples_batch_ids.append(file_submitter_id)
@@ -636,7 +637,7 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
                 "*file_name": file_name
             }
 
-            print("creating record for all-consent file:  " + file_submitter_id )
+            # print("creating record for all-consent file:  " + file_submitter_id )
             # submitter.submit_record(program_name, project_name, aldf_obj)
             if not fileAllConsents_batch_ids:
                 fileAllConsents_batch_ids.append(file_submitter_id)

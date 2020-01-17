@@ -9,6 +9,7 @@ from requests.auth import AuthBase
 import requests
 import hashlib
 
+from datetime import datetime
 import multiprocessing
 from subprocess import call
 
@@ -22,10 +23,14 @@ submitter = Gen3Submission(endpoint, auth)
 
 response = requests.get(APIURL+"datasets?includes=datasetVersions", headers=HEADERS)
 # response.json() produces a dictionary
-print(APIURL+"datasets?includes=datasetVersions")
+# print(APIURL+"datasets?includes=datasetVersions")
 dataset_data = response.json()['data']
 
 def populate_datastage():
+    now = datetime.now()
+    printime = now.strftime("%H:%M:%S")
+    print('Load program starting at {}').format(printime)
+
     def openFiles():
     ## 12/19 opening file just for dev, so dont have to go through api call process to test building
         with open("jsondumps/samplesSubjects.json", "r") as json_file:
