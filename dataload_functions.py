@@ -185,8 +185,10 @@ def getConsents(dss_dataset_id):
         dataset_consents_tuples.append((consent_subject_count, consent))
 
     dataset_consents_tuples.sort()
+    ##
     """reverse will put largest consent-subject-groups first"""
-    dataset_consents_tuples.reverse()
+    ##
+    # dataset_consents_tuples.reverse()
 
     for consent_tuple in dataset_consents_tuples:
         dataset_consents_ordered.append(consent_tuple[1])
@@ -489,7 +491,7 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
         print('sending ' + str(len(fileSamples_array)) + ' fileSamples')
         print(fileSamples_array)
 
-        submitter.submit_record(program_name, project_name, ildf_obj)  
+        submitter.submit_record(program_name, project_name, fileSamples_array)  
 
         del fileSamples_array[:]
         del fileSamples_batch_ids[:]
@@ -558,7 +560,7 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
     def send_fileAllConsents():
         print('sending ' + str(len(fileAllConsents_array)) + ' fileAllConsents')
         print(fileAllConsents_array)
-        submitter.submit_record(program_name, project_name, file_allConsents_array)
+        submitter.submit_record(program_name, project_name, fileAllConsents_array)
         del fileAllConsents_array[:]
         del fileAllConsents_batch_ids[:]
 
