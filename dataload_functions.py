@@ -389,12 +389,10 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                 def create_sample():
                     print( "creating sample record(s) for " + sample["key"] )
 
-                    sample_key = sample["key"]
-
                     sample_obj = {
                         "platform": sample["platform"], 
                         "type": "sample", 
-                        "submitter_id": sample_key, 
+                        "submitter_id": sample["key"], 
                         "data_type": sample["assay"], 
                         "sample_source": sample["source"], 
                         "subjects": {
@@ -404,11 +402,11 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                     # print(sample_obj) # for checking object correctness
                     # submitter.submit_record(program_name, project_name, sample_obj)
                     if not sample_batch_ids:
-                        sample_batch_ids.append(sample_key)
+                        sample_batch_ids.append(sample["key"])
                         sample_array.append(sample_obj)
 
-                    elif sample_key not in sample_batch_ids:
-                        sample_batch_ids.append(sample_key)
+                    elif sample["key"] not in sample_batch_ids:
+                        sample_batch_ids.append(sample["key"])
                         sample_array.append(sample_obj)
 
                 def create_phenotype():
@@ -452,17 +450,20 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                         phenotype_array.append(phenotype_obj)
 
                 create_subject()
-                if len(subject_array) > 0 and len(subject_array) % batch_size == 0:
+                if len(subject_array) > 0 and len(subject_array) >= batch_size:
                     print('---sending from the modulo based if statement')
                     send_subjects()
 
                 create_sample()
-                if len(sample_array) > 0 and len(sample_array) % batch_size == 0:
-                    print('---sending from the modulo based if statement')
-                    send_samples()
+                if len(sample_array) > 0 and len(sample_array) >= batch_size:
+                    
+                    """make sure dont try to create samples with no subject yet"""
+                    if len(subject_array) < 10:
+                        print('---sending from the modulo based if statement')
+                        send_samples()
 
                 create_phenotype()
-                if len(phenotype_array) > 0 and len(phenotype_array) % batch_size == 0:
+                if len(phenotype_array) > 0 and len(phenotype_array) >= batch_size:
                     print('---sending from the modulo based if statement')
                     send_phenotypes()
 
