@@ -481,6 +481,19 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
 
 
 def createIDLFs(consent, filesSamples, project_name, program_name):
+    batch_size = 250
+    fileSamples_array = []
+    fileSamples_batch_ids = []
+
+    def send_fileSamples():
+        print('sending ' + str(len(fileSamples_array)) + ' fileSamples')
+        print(fileSamples_array)
+
+        submitter.submit_record(program_name, project_name, ildf_obj)  
+
+        del fileSamples_array[:]
+        del fileSamples_batch_ids[:]
+
     for file in filesSamples:
         if file["sample"]["subject"]["consent"] is not None:
             if file["sample"]["subject"]["consent"]["key"].strip() == consent:
@@ -513,8 +526,19 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
                 }
 
                 print("creating record for individual-related file:  " + file_submitter_id )
-                submitter.submit_record(program_name, project_name, ildf_obj)
-
+                if not fileSamples_batch_ids:
+                    fileSamples_batch_ids.append(file_submitter_id)
+                    fileSamples_array.append(ildf_obj)
+                elif file_submitter_id not in fileSamples_batch_ids:
+                    fileSamples_batch_ids.append(file_submitter_id)
+                    fileSamples_array.append(ildf_obj)
+                # submitter.submit_record(program_name, project_name, ildf_obj)
+                
+                if len(fileSamples_array) > 0 and len(fileSamples_array) >= batch_size:
+                    send_fileSamples()
+    if len(fileSamples_array) > 0:
+        send_fileSamples()
+        
 def createALDFs(consent, files_list, project_name, program_name, filetype):
     def create_non_sample_file():
         for file in files_list:
