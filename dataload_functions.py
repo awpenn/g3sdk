@@ -186,7 +186,7 @@ def getConsents(dss_dataset_id):
 
     dataset_consents_tuples.sort()
     """reverse will put largest consent-subject-groups first"""
-    dataset_consents_tuples.reverse()
+    # dataset_consents_tuples.reverse()
 
     for consent_tuple in dataset_consents_tuples:
         dataset_consents_ordered.append(consent_tuple[1])
