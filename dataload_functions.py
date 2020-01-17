@@ -493,7 +493,6 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
                 file_md5 = hashlib.md5( file_name + file_format + str(file_id) ).hexdigest()
                             
                         ## AW- currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
-                
                 ildf_obj = {
                     "*data_type": file["sample"]["assay"], 
                     "*consent": consent, 
@@ -512,15 +511,14 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
                     "fileset": file["fileset"]["accession"],
                     "*submitter_id": file_submitter_id
                 }
-                print("creating record for individual-related file:  " + file_submitter_id )
 
+                print("creating record for individual-related file:  " + file_submitter_id )
                 submitter.submit_record(program_name, project_name, ildf_obj)
 
 def createALDFs(consent, files_list, project_name, program_name, filetype):
     def create_non_sample_file():
         for file in files_list:
             if file["consent"] is not None:
-
                 if file["consent_key"].strip() == consent:
                             
                     ##in DSS type=cram, index, etc., on datastage that is format
