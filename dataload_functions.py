@@ -540,6 +540,28 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
         send_fileSamples()
         
 def createALDFs(consent, files_list, project_name, program_name, filetype):
+    batch_size = 25
+
+    fileNonSamples_array = []
+    fileNonSamples_batch_ids = []
+
+    fileAllConsents_array = []
+    fileAllConsents_batch_ids = []
+
+    def send_fileNonSamples():
+        print('sending ' + str(len(fileNonSamples_array)) + ' file_NonSamples')
+        print(fileNonSamples_array)
+        submitter.submit_record(program_name, project_name, fileNonSamples_array)
+        del fileNonSamples_array[:]
+        del fileNonSamples_batch_ids[:]
+
+    def send_fileAllConsents():
+        print('sending ' + str(len(fileAllConsents_array)) + ' fileAllConsents')
+        print(fileAllConsents_array)
+        submitter.submit_record(program_name, project_name, file_allConsents_array)
+        del fileAllConsents_array[:]
+        del fileAllConsents_batch_ids[:]
+
     def create_non_sample_file():
         for file in files_list:
             if file["consent"] is not None:
@@ -572,8 +594,18 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
                     }
                             
                     print("creating record for non-sample file:  " + file_submitter_id )
-                    submitter.submit_record(program_name, project_name, aldf_obj)
-    
+                    # submitter.submit_record(program_name, project_name, aldf_obj)
+                    if not fileNonSamples_batch_ids:
+                        fileNonSamples_batch_ids.append(file_submitter_id)
+                        fileNonSamples_array.append(aldf_obj)
+
+                    elif file_submitter_id not in fileNonSamples_batch_ids:
+                        fileNonSamples_batch_ids.append(file_submitter_id)
+                        fileNonSamples_array.append(aldf_obj) 
+
+                if len(fileNonSamples_array) >= batch_size:
+                    send_fileNonSamples()
+
     def create_all_consent_file():
         for file in files_list:
 
@@ -603,9 +635,24 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
             }
 
             print("creating record for all-consent file:  " + file_submitter_id )
-            submitter.submit_record(program_name, project_name, aldf_obj)
+            # submitter.submit_record(program_name, project_name, aldf_obj)
+            if not fileAllConsents_batch_ids:
+                fileAllConsents_batch_ids.append(file_submitter_id)
+                fileAllConsents_array.append(aldf_obj)
+
+            elif file_submitter_id not in fileAllConsents_batch_ids:
+                fileAllConsents_batch_ids.append(file_submitter_id)
+                fileAllConsents_array.append(aldf_obj)
+        
+            if len(fileAllConsents_array) >= batch_size:
+                send_fileAllConsents()
 
     if filetype == 'filesNonSamples':
         create_non_sample_file()
+        if len(fileNonSamples_array) > 0:
+            send_fileNonSamples()
+
     elif filetype == 'filesAllConsents':
         create_all_consent_file()
+        if len(fileAllConsents_array) > 0:
+            send_fileAllConsents()
