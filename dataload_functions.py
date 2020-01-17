@@ -185,6 +185,7 @@ def getConsents(dss_dataset_id):
         dataset_consents_tuples.append((consent_subject_count, consent))
 
     dataset_consents_tuples.sort()
+    """reverse will put largest consent-subject-groups first"""
     dataset_consents_tuples.reverse()
 
     for consent_tuple in dataset_consents_tuples:
@@ -332,7 +333,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
     phenotype_array = []
     phenotype_batch_ids = []
 
-    batch_size = 20
+    batch_size = 250
 
     def send_subjects():
         print('sending ' + str(len(subject_array)) + ' subjects')
@@ -388,10 +389,12 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                 def create_sample():
                     print( "creating sample record(s) for " + sample["key"] )
 
+                    sample_key = sample["key"]
+
                     sample_obj = {
                         "platform": sample["platform"], 
                         "type": "sample", 
-                        "submitter_id": sample["key"], 
+                        "submitter_id": sample_key, 
                         "data_type": sample["assay"], 
                         "sample_source": sample["source"], 
                         "subjects": {
@@ -401,11 +404,11 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                     # print(sample_obj) # for checking object correctness
                     # submitter.submit_record(program_name, project_name, sample_obj)
                     if not sample_batch_ids:
-                        sample_batch_ids.append(sample["key"])
+                        sample_batch_ids.append(sample_key)
                         sample_array.append(sample_obj)
 
-                    elif current_subject_id not in phenotype_batch_ids:
-                        sample_batch_ids.append(sample["key"])
+                    elif sample_key not in sample_batch_ids:
+                        sample_batch_ids.append(sample_key)
                         sample_array.append(sample_obj)
 
                 def create_phenotype():
