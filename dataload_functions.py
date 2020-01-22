@@ -9,6 +9,7 @@ import hashlib
 
 import calendar
 from datetime import datetime
+from time import sleep
 
 import threading
 from multiprocessing import Process
@@ -52,7 +53,7 @@ def phenotype_prettifier(rawInput):
     return " ".join(word_list)
 
 def partition(consents):
-    consents_per_chunk = 1
+    consents_per_chunk = 2
     for i in range(0, len(consents), consents_per_chunk):
         yield consents[i:i + consents_per_chunk]
 
@@ -260,7 +261,7 @@ def createProject(arr):
 
     now = datetime.now()
     printime = now.strftime("%H:%M:%S")
-    print('\n--Creating project for {} in {} and {}').format(consent, program_name, printime)
+    print('\n--Creating project for {} in {} at {}').format(consent, program_name, printime)
     # print('Starting project {} build at {}').format(consent, calendar.timegm(time.gmtime()))
 
     project_sample_set = set({})
@@ -289,7 +290,15 @@ def createProject(arr):
 
         query = '{project(name:\"%s\"){id}}' % project_name
         # print(query)
-        fetched_project_id = submitter.query(query)["data"]["project"][0]["id"]
+        """with multiprocessing, sometimes projects dont get created correctly, so this tries to query for the id, if it doesn't work it tries to create project again"""
+        for x in range(0,5):
+            try:
+                fetched_project_id = submitter.query(query)["data"]["project"][0]["id"]
+                break
+            except Exception as query_error:
+                print('failon ' + query + '\n')
+                submitter.create_project(program_name, project_obj)
+                sleep(5)
 
         cmc_obj = {
             "*collection_type": "Consent-Level File Manifest", 
@@ -323,7 +332,7 @@ def createProject(arr):
         # createIDLFs(consent, filesSamples, project_name, program_name)
         # createALDFs(consent, filesNonSamples, project_name, program_name, "filesNonSamples")
         # createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
-
+    
 def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id):
 
     """for handling the batching"""
@@ -336,24 +345,24 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
     phenotype_array = []
     phenotype_batch_ids = []
 
-    batch_size = 250
+    batch_size = 500
 
     def send_subjects():
-        print('sending ' + str(len(subject_array)) + ' subjects' + ' for project ' + consent)
+        # print('sending ' + str(len(subject_array)) + ' subjects' + ' for project ' + consent)
         # print(subject_array)
         submitter.submit_record(program_name, project_name, subject_array)
         del subject_array[:]
         del subject_batch_ids[:]
 
     def send_samples():
-        print('sending ' + str(len(sample_array)) + ' samples' + ' for project ' + consent)
+        # print('sending ' + str(len(sample_array)) + ' samples' + ' for project ' + consent)
         # print(sample_array)
         submitter.submit_record(program_name, project_name, sample_array)
         del sample_array[:]
         del sample_batch_ids[:]
 
     def send_phenotypes():
-        print('sending ' + str(len(phenotype_array)) + ' phenotypes' + ' for project ' + consent)
+        # print('sending ' + str(len(phenotype_array)) + ' phenotypes' + ' for project ' + consent)
         # print(phenotype_array)
         submitter.submit_record(program_name, project_name, phenotype_array)
         del phenotype_array[:]
@@ -471,25 +480,25 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                     send_phenotypes()
 
     if len(subject_array) > 0:
-        # print('sending remaining subjects, outside of batch-size constraint')
+        # # print('sending remaining subjects, outside of batch-size constraint')
         send_subjects()
 
     if len(sample_array) > 0:
-        # print('sending remaining, outside of batch-size constraint')
+        # # print('sending remaining, outside of batch-size constraint')
         send_samples()
 
     if len(phenotype_array) > 0:
-        # print('sending remaining, outside of batch-size constraint')
+        # # print('sending remaining, outside of batch-size constraint')
         send_phenotypes()
 
 
 def createIDLFs(consent, filesSamples, project_name, program_name):
-    batch_size = 250
+    batch_size = 20
     fileSamples_array = []
     fileSamples_batch_ids = []
 
     def send_fileSamples():
-        print('sending ' + str(len(fileSamples_array)) + ' fileSamples' + ' to ' + consent)
+        # print('sending ' + str(len(fileSamples_array)) + ' fileSamples' + ' to ' + consent)
         # print(fileSamples_array)
 
         submitter.submit_record(program_name, project_name, fileSamples_array)  
@@ -552,14 +561,14 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
     fileAllConsents_batch_ids = []
 
     def send_fileNonSamples():
-        print('sending ' + str(len(fileNonSamples_array)) + ' file_NonSamples' + ' to ' + consent)
+        # print('sending ' + str(len(fileNonSamples_array)) + ' file_NonSamples' + ' to ' + consent)
         # print(fileNonSamples_array)
         submitter.submit_record(program_name, project_name, fileNonSamples_array)
         del fileNonSamples_array[:]
         del fileNonSamples_batch_ids[:]
 
     def send_fileAllConsents():
-        print('sending ' + str(len(fileAllConsents_array)) + ' fileAllConsents' + ' to ' + consent)
+        # print('sending ' + str(len(fileAllConsents_array)) + ' fileAllConsents' + ' to ' + consent)
         # print(fileAllConsents_array)
         submitter.submit_record(program_name, project_name, fileAllConsents_array)
         del fileAllConsents_array[:]
