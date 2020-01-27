@@ -53,7 +53,7 @@ def phenotype_prettifier(rawInput):
     return " ".join(word_list)
 
 def partition(consents):
-    consents_per_chunk = 2
+    consents_per_chunk = 1
     for i in range(0, len(consents), consents_per_chunk):
         yield consents[i:i + consents_per_chunk]
 
@@ -63,6 +63,8 @@ def runInParallel(fn, args_list):
     for consent_args in args_list:
         p = Process(target=fn, args=[consent_args])
         p.start()
+        """trying to offset process start"""
+        sleep(1)
         proc.append(p)
     for p in proc:
         p.join()
@@ -316,22 +318,22 @@ def createProject(arr):
         createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
 
         ## node generation with multiprocessing
-        p1 = Process(target=createIDLFs, args=(consent, filesSamples, project_name, program_name))
-        p2 = Process(target=createALDFs, args=(consent, filesNonSamples, project_name, program_name, "filesNonSamples"))
-        p3 = Process(target=createALDFs, args=(consent, filesAllConsents, project_name, program_name, "filesAllConsents"))
+        # p1 = Process(target=createIDLFs, args=(consent, filesSamples, project_name, program_name))
+        # p2 = Process(target=createALDFs, args=(consent, filesNonSamples, project_name, program_name, "filesNonSamples"))
+        # p3 = Process(target=createALDFs, args=(consent, filesAllConsents, project_name, program_name, "filesAllConsents"))
 
-        p1.start()
-        p2.start()
-        p3.start()
+        # p1.start()
+        # p2.start()
+        # p3.start()
  
-        p1.join()
-        p2.join()
-        p3.join()
+        # p1.join()
+        # p2.join()
+        # p3.join()
 
 
-        # createIDLFs(consent, filesSamples, project_name, program_name)
-        # createALDFs(consent, filesNonSamples, project_name, program_name, "filesNonSamples")
-        # createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
+        createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
+        createALDFs(consent, filesNonSamples, project_name, program_name, "filesNonSamples")
+        createIDLFs(consent, filesSamples, project_name, program_name)
     
 def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id):
 
@@ -345,7 +347,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
     phenotype_array = []
     phenotype_batch_ids = []
 
-    batch_size = 500
+    batch_size = 100
 
     def send_subjects():
         # print('sending ' + str(len(subject_array)) + ' subjects' + ' for project ' + consent)
@@ -462,12 +464,12 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                         phenotype_array.append(phenotype_obj)
 
                 create_subject()
-                if len(subject_array) > 0 and len(subject_array) >= batch_size:
+                if len(subject_array) >= batch_size:
                     # print('---sending from the modulo based if statement')
                     send_subjects()
 
                 create_sample()
-                if len(sample_array) > 0 and len(sample_array) >= batch_size:
+                if len(sample_array) >= batch_size:
                     
                     """make sure dont try to create samples with no subject yet"""
                     if len(subject_array) < 10:
@@ -475,7 +477,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                         send_samples()
 
                 create_phenotype()
-                if len(phenotype_array) > 0 and len(phenotype_array) >= batch_size:
+                if len(phenotype_array) >= batch_size:
                     # print('---sending from the modulo based if statement')
                     send_phenotypes()
 
@@ -498,10 +500,12 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
     fileSamples_batch_ids = []
 
     def send_fileSamples():
-        # print('sending ' + str(len(fileSamples_array)) + ' fileSamples' + ' to ' + consent)
-        # print(fileSamples_array)
+        now = datetime.now()
+        printime = now.strftime("%H:%M:%S")
 
-        submitter.submit_record(program_name, project_name, fileSamples_array)  
+        submitter.submit_record(program_name, project_name, fileSamples_array)
+        
+        # print('sending ' + str(len(fileSamples_array)) + ' fileSamples' + ' to ' + consent + ' at {}').format(printime)
 
         del fileSamples_array[:]
         del fileSamples_batch_ids[:]
