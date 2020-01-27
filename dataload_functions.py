@@ -23,6 +23,7 @@ auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 submitter = Gen3Submission(endpoint, auth)
 
 submitter_lock = threading.Lock()
+project_lock = threading.Lock()
 
 ##smart uppercasing of lowercase phenotype values 
 def phenotype_prettifier(rawInput):
@@ -288,10 +289,12 @@ def createProject(arr):
             "availability_type": "Restricted"
         }
 
+        project_lock.acquire()
         submitter.create_project(program_name, project_obj)
 
         ## create CMC for each created project
 
+        sleep(5)
         query = '{project(name:\"%s\"){id}}' % project_name
         # print(query)
         """with multiprocessing, sometimes projects dont get created correctly, so this tries to query for the id, if it doesn't work it tries to create project again"""
@@ -303,6 +306,8 @@ def createProject(arr):
                 print('failon ' + query + '\n')
                 submitter.create_project(program_name, project_obj)
                 sleep(5)
+                
+        project_lock.release()
 
         cmc_obj = {
             "*collection_type": "Consent-Level File Manifest", 
