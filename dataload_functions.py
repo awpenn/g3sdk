@@ -22,6 +22,8 @@ auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 
 submitter = Gen3Submission(endpoint, auth)
 
+submitter_lock = threading.Lock()
+
 ##smart uppercasing of lowercase phenotype values 
 def phenotype_prettifier(rawInput):
     connectives = ['and', 'or']
@@ -53,7 +55,7 @@ def phenotype_prettifier(rawInput):
     return " ".join(word_list)
 
 def partition(consents):
-    consents_per_chunk = 1
+    consents_per_chunk = 2
     for i in range(0, len(consents), consents_per_chunk):
         yield consents[i:i + consents_per_chunk]
 
@@ -503,8 +505,9 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
         now = datetime.now()
         printime = now.strftime("%H:%M:%S")
 
+        submitter_lock.acquire()
         submitter.submit_record(program_name, project_name, fileSamples_array)
-        
+        submitter_lock.release()
         # print('sending ' + str(len(fileSamples_array)) + ' fileSamples' + ' to ' + consent + ' at {}').format(printime)
 
         del fileSamples_array[:]
