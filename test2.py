@@ -34,6 +34,7 @@ def populate_datastage():
     def openFiles():
     ## 12/19 opening file just for dev, so dont have to go through api call process to test building
         with open("jsondumps/samplesSubjects.json", "r") as json_file:
+            """these are all lists"""
             samplesAndSubjects = json.load(json_file)
 
         with open("jsondumps/fileSamples.json", "r") as json_file:
