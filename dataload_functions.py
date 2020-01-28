@@ -23,7 +23,6 @@ auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 submitter = Gen3Submission(endpoint, auth)
 
 submitter_lock = threading.Lock()
-project_lock = threading.Lock()
 
 ##smart uppercasing of lowercase phenotype values 
 def phenotype_prettifier(rawInput):
@@ -66,11 +65,11 @@ def runInParallel(fn, args_list):
     for consent_args in args_list:
         p = Process(target=fn, args=[consent_args])
         p.start()
-        """trying to offset process start"""
-        sleep(1)
+
         proc.append(p)
     for p in proc:
         p.join()
+
 
 def build_dataset_url(dataset_name):
     dataset_url_base = "https://dss.naigads.org/datasets/"
@@ -272,7 +271,7 @@ def createProject(arr):
     project_sample_set = set({})
     for key, sample in samplesAndSubjects.iteritems():
         ## some subjects have 'null' consent, ignoring for now
-        if sample["subject"]["consent"] is not None:
+        if sample["subject"]["consent"]:
             ## if the subject's consent matches the current project, add to the pss set
             if sample["subject"]["consent"]["key"].strip() == consent:
                 project_sample_set.add( sample["subject"]["key"] )
@@ -289,12 +288,10 @@ def createProject(arr):
             "availability_type": "Restricted"
         }
 
-        project_lock.acquire()
         submitter.create_project(program_name, project_obj)
 
         ## create CMC for each created project
 
-        sleep(5)
         query = '{project(name:\"%s\"){id}}' % project_name
         # print(query)
         """with multiprocessing, sometimes projects dont get created correctly, so this tries to query for the id, if it doesn't work it tries to create project again"""
@@ -307,7 +304,6 @@ def createProject(arr):
                 submitter.create_project(program_name, project_obj)
                 sleep(5)
                 
-        project_lock.release()
 
         cmc_obj = {
             "*collection_type": "Consent-Level File Manifest", 
@@ -509,17 +505,14 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
     def send_fileSamples():
         now = datetime.now()
         printime = now.strftime("%H:%M:%S")
-
-        submitter_lock.acquire()
         submitter.submit_record(program_name, project_name, fileSamples_array)
-        submitter_lock.release()
         # print('sending ' + str(len(fileSamples_array)) + ' fileSamples' + ' to ' + consent + ' at {}').format(printime)
 
         del fileSamples_array[:]
         del fileSamples_batch_ids[:]
 
     for file in filesSamples:
-        if file["sample"]["subject"]["consent"] is not None:
+        if file["sample"]["subject"]["consent"]:
             if file["sample"]["subject"]["consent"]["key"].strip() == consent:
                 ##in DSS type=cram, index, etc., on datastage that is data_format
                 ##in datastage, file_type = this is WGS, WES, etc., which is sample.assay in dss data
@@ -588,7 +581,7 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
 
     def create_non_sample_file():
         for file in files_list:
-            if file["consent"] is not None:
+            if file["consent"]:
                 if file["consent_key"].strip() == consent:
                             
                     ##in DSS type=cram, index, etc., on datastage that is format
