@@ -55,7 +55,7 @@ def phenotype_prettifier(rawInput):
     return " ".join(word_list)
 
 def partition(consents):
-    consents_per_chunk = 2
+    consents_per_chunk = 3
     for i in range(0, len(consents), consents_per_chunk):
         yield consents[i:i + consents_per_chunk]
 
@@ -336,7 +336,10 @@ def createProject(arr):
 
         createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
         createALDFs(consent, filesNonSamples, project_name, program_name, "filesNonSamples")
-        createIDLFs(consent, filesSamples, project_name, program_name)
+        ildfs = createIDLFs(consent, filesSamples, project_name, program_name)
+
+        # """for dropped file debugging 1/28"""
+        # print('loop complete for ' + consent + ' with counter = ' + str(ildfs))
     
 def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id):
 
@@ -498,6 +501,8 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
 
 
 def createIDLFs(consent, filesSamples, project_name, program_name):
+    # """debugging dropped sampleFiles with counter"""
+    # counter = 0
     batch_size = 20
     fileSamples_array = []
     fileSamples_batch_ids = []
@@ -551,10 +556,15 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
                     fileSamples_array.append(ildf_obj)
                 # submitter.submit_record(program_name, project_name, ildf_obj)
                 
-                if len(fileSamples_array) > 0 and len(fileSamples_array) >= batch_size:
+                if len(fileSamples_array) >= batch_size:
+                    counter += len(fileSamples_array)
                     send_fileSamples()
     if len(fileSamples_array) > 0:
+        counter += len(fileSamples_array)
         send_fileSamples()
+
+    # """counter for debugging"""
+    # return counter
         
 def createALDFs(consent, files_list, project_name, program_name, filetype):
     batch_size = 25
