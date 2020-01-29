@@ -60,15 +60,15 @@ def partition(consents):
         yield consents[i:i + consents_per_chunk]
 
 def runInParallel(fn, args_list):
-    proc = []
+    threads = []
 
     for consent_args in args_list:
-        p = Process(target=fn, args=[consent_args])
-        p.start()
+        t = threading.Thread(target=fn, args=[consent_args])
+        t.start()
 
-        proc.append(p)
-    for p in proc:
-        p.join()
+        thread.append(t)
+    for t in threads:
+        t.join()
 
 
 def build_dataset_url(dataset_name):
@@ -253,6 +253,12 @@ def getData(dss_dataset_id, filetype):
 
 
 ## [consent, program_name, filesAndPhenotypes, samplesAndSubjects]
+def submit_fileSamples(program_name, project_name, fileSamples_array):
+    submitter_lock.acquire()
+    submitter.submit_record(program_name, project_name, fileSamples_array)
+    submitter_lock.release()
+
+
 def createProject(arr):
     consent = arr[0]
     program_name = arr[1]
@@ -339,7 +345,7 @@ def createProject(arr):
         ildfs = createIDLFs(consent, filesSamples, project_name, program_name)
 
         # """for dropped file debugging 1/28"""
-        # print('loop complete for ' + consent + ' with counter = ' + str(ildfs))
+        print('loop complete for ' + consent + ' with counter = ' + str(ildfs))
     
 def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id):
 
@@ -501,8 +507,8 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
 
 
 def createIDLFs(consent, filesSamples, project_name, program_name):
-    # """debugging dropped sampleFiles with counter"""
-    # counter = 0
+    """debugging dropped sampleFiles with counter"""
+    counter = 0
     batch_size = 20
     fileSamples_array = []
     fileSamples_batch_ids = []
@@ -510,7 +516,9 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
     def send_fileSamples():
         now = datetime.now()
         printime = now.strftime("%H:%M:%S")
-        submitter.submit_record(program_name, project_name, fileSamples_array)
+
+        submit_fileSamples(program_name, project_name, fileSamples_array)
+
         # print('sending ' + str(len(fileSamples_array)) + ' fileSamples' + ' to ' + consent + ' at {}').format(printime)
 
         del fileSamples_array[:]
@@ -564,7 +572,7 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
         send_fileSamples()
 
     # """counter for debugging"""
-    # return counter
+    return counter
         
 def createALDFs(consent, files_list, project_name, program_name, filetype):
     batch_size = 25
