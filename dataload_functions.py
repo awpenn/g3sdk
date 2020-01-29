@@ -66,7 +66,7 @@ def runInParallel(fn, args_list):
         t = threading.Thread(target=fn, args=[consent_args])
         t.start()
 
-        thread.append(t)
+        threads.append(t)
     for t in threads:
         t.join()
 
@@ -359,7 +359,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
     phenotype_array = []
     phenotype_batch_ids = []
 
-    batch_size = 100
+    batch_size = 50
 
     def send_subjects():
         # print('sending ' + str(len(subject_array)) + ' subjects' + ' for project ' + consent)
