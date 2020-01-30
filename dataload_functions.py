@@ -254,43 +254,6 @@ def getData(dss_dataset_id, filetype):
 
 
 ## [consent, program_name, filesAndPhenotypes, samplesAndSubjects]
-def submit_fileSamples(program_name, project_name, fileSamples_array):
-    submission_attempt_counter = 0
-
-    submission_id = str(round(random.random()*500, 1))
-    now = datetime.now()
-    printime = now.strftime("%H:%M:%S")
-
-    # print('trying to send to ' + project_name + ' (' + submission_id + ') at ' + printime)
-    submitter_lock.acquire()
-    # submitter.submit_record(program_name, project_name, fileSamples_array)
-    """actually sending ? (debug)"""
-    fs_send = submitter.submit_record(program_name, project_name, fileSamples_array)
-
-    if submission_attempt_counter < 5:
-        try:
-            # now = datetime.now()
-            # resptime = now.strftime("%H:%M:%S")
-            # print('\n         Response for ' + project_name + ' (' + submission_id + ') at ' + resptime + ': ' + str(json.loads(fs_send)["code"]) + '\n')
-            print('confirming submission for ' + project_name + ' ' + submission_id)
-            json.loads(fs_send)["code"]
-
-            
-        except:
-            # now = datetime.now()
-            # resptime = now.strftime("%H:%M:%S")
-            # print('         couldnt print response code for '  + project_name + ' at ' + resptime)
-            print('couldnt get response confirmation from gen3 for '  + project_name + ' sent at ' + printime)
-            sleep(5)
-            print('trying again')
-            submit_fileSamples(program_name, project_name, fileSamples_array)
-            submission_attempt_counter += 1
-    
-    else:
-        print('tried to submit ' + projecgt_name + ' submission starting at ' + printime + ' 5 times. Continuing on.')
-
-    submitter_lock.release()
-
 
 def createProject(arr):
     consent = arr[0]
@@ -538,7 +501,32 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
         # # print('sending remaining, outside of batch-size constraint')
         send_phenotypes()
 
+def submit_fileSamples(program_name, project_name, fileSamples_array):
+    submission_attempt_counter = 0
 
+    submission_id = str(round(random.random()*500, 1))
+    now = datetime.now()
+    printime = now.strftime("%H:%M:%S")
+
+    submitter_lock.acquire()
+    """actually sending ? (debug)"""
+    fs_send = submitter.submit_record(program_name, project_name, fileSamples_array)
+
+    if submission_attempt_counter < 5:
+        try:
+            json.loads(fs_send)["code"]
+        except:
+            print('couldnt get response confirmation from gen3 for '  + project_name + ' sent at ' + printime)
+            sleep(5)
+            print('trying again')
+            submit_fileSamples(program_name, project_name, fileSamples_array)
+            submission_attempt_counter += 1
+    
+    else:
+        print('tried to submit ' + project_name + ' submission starting at ' + printime + ' 5 times. Continuing on.')
+
+    submitter_lock.release()
+    
 def createIDLFs(consent, filesSamples, project_name, program_name):
     """debugging dropped sampleFiles with counter"""
     counter = 0
@@ -551,8 +539,6 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
         printime = now.strftime("%H:%M:%S")
 
         submit_fileSamples(program_name, project_name, fileSamples_array)
-
-        # print('sending ' + str(len(fileSamples_array)) + ' fileSamples' + ' to ' + consent + ' at {}').format(printime)
 
         del fileSamples_array[:]
         del fileSamples_batch_ids[:]
