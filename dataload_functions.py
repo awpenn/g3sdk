@@ -1,7 +1,6 @@
 import gen3
 from gen3 import submission
 from gen3 import auth
-import pandas as pd
 import json
 from requests.auth import AuthBase
 import random
@@ -24,9 +23,9 @@ auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 submitter = Gen3Submission(endpoint, auth)
 
 submitter_lock = threading.Lock()
-
-##smart uppercasing of lowercase phenotype values 
+ 
 def phenotype_prettifier(rawInput):
+    """smart uppercasing of lowercase phenotype values"""
     connectives = ['and', 'or']
     word_list = []
 
@@ -56,7 +55,7 @@ def phenotype_prettifier(rawInput):
     return " ".join(word_list)
 
 def partition(consents):
-    consents_per_chunk = 3
+    consents_per_chunk = 2
     for i in range(0, len(consents), consents_per_chunk):
         yield consents[i:i + consents_per_chunk]
 
@@ -252,7 +251,6 @@ def getData(dss_dataset_id, filetype):
     return data_list
 
 
-
 ## [consent, program_name, filesAndPhenotypes, samplesAndSubjects]
 
 def createProject(arr):
@@ -355,7 +353,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
     phenotype_array = []
     phenotype_batch_ids = []
 
-    batch_size = 500
+    batch_size = 250
 
     def send_subjects():
         # print('sending ' + str(len(subject_array)) + ' subjects' + ' for project ' + consent)
@@ -481,24 +479,19 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                     
                     """make sure dont try to create samples with no subject yet"""
                     if len(subject_array) < 10:
-                        # print('---sending from the modulo based if statement')
                         send_samples()
 
                 create_phenotype()
                 if len(phenotype_array) >= batch_size:
-                    # print('---sending from the modulo based if statement')
                     send_phenotypes()
-
+    """if there are subjects/samples/phenotypes remaining in a <500 node batch at end of loop, send"""
     if len(subject_array) > 0:
-        # # print('sending remaining subjects, outside of batch-size constraint')
         send_subjects()
 
     if len(sample_array) > 0:
-        # # print('sending remaining, outside of batch-size constraint')
         send_samples()
 
     if len(phenotype_array) > 0:
-        # # print('sending remaining, outside of batch-size constraint')
         send_phenotypes()
 
 def submit_fileSamples(program_name, project_name, fileSamples_array):
@@ -507,8 +500,9 @@ def submit_fileSamples(program_name, project_name, fileSamples_array):
     submission_id = str(round(random.random()*500, 1))
     now = datetime.now()
     printime = now.strftime("%H:%M:%S")
-
-    submitter_lock.acquire()
+    
+    """1/30 remove locking mech?"""
+    # submitter_lock.acquire()
     """actually sending ? (debug)"""
     fs_send = submitter.submit_record(program_name, project_name, fileSamples_array)
 
@@ -525,8 +519,8 @@ def submit_fileSamples(program_name, project_name, fileSamples_array):
     else:
         print('tried to submit ' + project_name + ' submission starting at ' + printime + ' 5 times. Continuing on.')
 
-    submitter_lock.release()
-    
+    # submitter_lock.release()
+
 def createIDLFs(consent, filesSamples, project_name, program_name):
     """debugging dropped sampleFiles with counter"""
     counter = 0
@@ -544,48 +538,45 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
         del fileSamples_batch_ids[:]
 
     for file in filesSamples:
-        if file["sample"]["subject"]["consent"]:
-            if file["sample"]["subject"]["consent"]["key"].strip() == consent:
-                ##in DSS type=cram, index, etc., on datastage that is data_format
-                ##in datastage, file_type = this is WGS, WES, etc., which is sample.assay in dss data
-                file_name = file["name"]
-                file_format = file["type"]
-                file_id = file["id"]
-                file_submitter_id = file_name + "_" + file_format + "_" + str( file["id"] )
-                file_md5 = hashlib.md5( file_name + file_format + str(file_id) ).hexdigest()
-                            
-                        ## AW- currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
-                ildf_obj = {
-                    "*data_type": file["sample"]["assay"], 
-                    "*consent": consent, 
-                    "core_metadata_collections": {
-                    "submitter_id": project_name+"_core_metadata_collection"
-                    }, 
-                    "*type": "individual_level_data_file", 
-                    "*file_path": file["path"], 
-                    "*data_format": file_format, 
-                    "*file_name": file_name, 
-                    "*md5sum": file_md5, 
-                    "*file_size": file["size"], 
-                    "*samples": {
-                    "submitter_id": file["sample"]["key"]
-                    }, 
-                    "fileset": file["fileset"]["accession"],
-                    "*submitter_id": file_submitter_id
-                }
+        if file["sample"]["subject"]["consent"] and file["sample"]["subject"]["consent"]["key"].strip() == consent:
+            file_name = file["name"]
+            file_format = file["type"]
+            file_id = file["id"]
+            file_submitter_id = file_name + "_" + file_format + "_" + str( file["id"] )
+            file_md5 = hashlib.md5( file_name + file_format + str(file_id) ).hexdigest()
+                        
+                    ## AW- currently missing ref_build and data_category(genotype, expression, etc.) because not in DSS data
+            ildf_obj = {
+                "*data_type": file["sample"]["assay"], 
+                "*consent": consent, 
+                "core_metadata_collections": {
+                "submitter_id": project_name+"_core_metadata_collection"
+                }, 
+                "*type": "individual_level_data_file", 
+                "*file_path": file["path"], 
+                "*data_format": file_format, 
+                "*file_name": file_name, 
+                "*md5sum": file_md5, 
+                "*file_size": file["size"], 
+                "*samples": {
+                "submitter_id": file["sample"]["key"]
+                }, 
+                "fileset": file["fileset"]["accession"],
+                "*submitter_id": file_submitter_id
+            }
 
                 # print("creating record for individual-related file:  " + file_submitter_id )
-                if not fileSamples_batch_ids:
-                    fileSamples_batch_ids.append(file_submitter_id)
-                    fileSamples_array.append(ildf_obj)
-                elif file_submitter_id not in fileSamples_batch_ids:
-                    fileSamples_batch_ids.append(file_submitter_id)
-                    fileSamples_array.append(ildf_obj)
-                # submitter.submit_record(program_name, project_name, ildf_obj)
+            if not fileSamples_batch_ids:
+                fileSamples_batch_ids.append(file_submitter_id)
+                fileSamples_array.append(ildf_obj)
+            elif file_submitter_id not in fileSamples_batch_ids:
+                fileSamples_batch_ids.append(file_submitter_id)
+                fileSamples_array.append(ildf_obj)
+            # submitter.submit_record(program_name, project_name, ildf_obj)
                 
-                if len(fileSamples_array) >= batch_size:
-                    counter += len(fileSamples_array)
-                    send_fileSamples()
+            if len(fileSamples_array) >= batch_size:
+                counter += len(fileSamples_array)
+                send_fileSamples()
 
     if len(fileSamples_array) > 0:
         counter += len(fileSamples_array)
@@ -619,47 +610,42 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
 
     def create_non_sample_file():
         for file in files_list:
-            if file["consent"]:
-                if file["consent_key"].strip() == consent:
+            if file["consent"] and file["consent_key"].strip() == consent:
+                ##file_type = ???? not in data (WGS WES etc.)... n/a for now
+                file_type = 'n/a'
+                file_format = file["type"]
+                file_id = file["id"]
+                file_name = file["name"]
+                file_submitter_id = file_name + "_" + file_format + "_" + str( file_id )
+                file_md5 = hashlib.md5( file_name + file_format + str( file_id ) ).hexdigest()
+                        # AW- currently missing data_type, ref_build, data_category(genotype, expression, etc.) because not in DSS data
+                aldf_obj = {
+                    "*data_type": file["type"], 
+                    "*consent": consent, 
+                    "core_metadata_collections": {
+                        "submitter_id": project_name + "_core_metadata_collection"
+                    }, 
+                    "*type": "aggregate_level_data_file", 
+                    "*file_path": file["path"], 
+                    "*data_format": file_format, 
+                    "*md5sum": file_md5, 
+                    "*file_size": file["size"], 
+                    "*submitter_id": file_submitter_id,
+                    "fileset": file["fileset"]["accession"],
+                    "*file_name": file_name
+                }
                             
-                    ##in DSS type=cram, index, etc., on datastage that is format
-                    ##file_type = ???? not in data (WGS WES etc.)... n/a for now
-                    file_type = 'n/a'
-                    file_format = file["type"]
-                    file_id = file["id"]
-                    file_name = file["name"]
-                    file_submitter_id = file_name + "_" + file_format + "_" + str( file_id )
-                    file_md5 = hashlib.md5( file_name + file_format + str( file_id ) ).hexdigest()
+                # submitter.submit_record(program_name, project_name, aldf_obj)
+                if not fileNonSamples_batch_ids:
+                    fileNonSamples_batch_ids.append(file_submitter_id)
+                    fileNonSamples_array.append(aldf_obj)
 
-                            # AW- currently missing data_type, ref_build, data_category(genotype, expression, etc.) because not in DSS data
-                    aldf_obj = {
-                        "*data_type": file["type"], 
-                        "*consent": consent, 
-                        "core_metadata_collections": {
-                            "submitter_id": project_name + "_core_metadata_collection"
-                        }, 
-                        "*type": "aggregate_level_data_file", 
-                        "*file_path": file["path"], 
-                        "*data_format": file_format, 
-                        "*md5sum": file_md5, 
-                        "*file_size": file["size"], 
-                        "*submitter_id": file_submitter_id,
-                        "fileset": file["fileset"]["accession"],
-                        "*file_name": file_name
-                    }
-                            
-                    # print("creating record for non-sample file:  " + file_submitter_id )
-                    # submitter.submit_record(program_name, project_name, aldf_obj)
-                    if not fileNonSamples_batch_ids:
-                        fileNonSamples_batch_ids.append(file_submitter_id)
-                        fileNonSamples_array.append(aldf_obj)
+                elif file_submitter_id not in fileNonSamples_batch_ids:
+                    fileNonSamples_batch_ids.append(file_submitter_id)
+                    fileNonSamples_array.append(aldf_obj) 
 
-                    elif file_submitter_id not in fileNonSamples_batch_ids:
-                        fileNonSamples_batch_ids.append(file_submitter_id)
-                        fileNonSamples_array.append(aldf_obj) 
-
-                if len(fileNonSamples_array) >= batch_size:
-                    send_fileNonSamples()
+            if len(fileNonSamples_array) >= batch_size:
+                send_fileNonSamples()
 
     def create_all_consent_file():
         for file in files_list:
