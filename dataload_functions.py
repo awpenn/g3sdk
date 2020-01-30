@@ -4,6 +4,7 @@ from gen3 import auth
 import pandas as pd
 import json
 from requests.auth import AuthBase
+import random
 import requests
 import hashlib
 
@@ -254,8 +255,27 @@ def getData(dss_dataset_id, filetype):
 
 ## [consent, program_name, filesAndPhenotypes, samplesAndSubjects]
 def submit_fileSamples(program_name, project_name, fileSamples_array):
+    submission_id = str(round(random.random()*500, 1))
+    now = datetime.now()
+    printime = now.strftime("%H:%M:%S")
+
+    print('trying to send to ' + project_name + ' (' + submission_id + ') at ' + printime)
     submitter_lock.acquire()
-    submitter.submit_record(program_name, project_name, fileSamples_array)
+    # submitter.submit_record(program_name, project_name, fileSamples_array)
+    """actually sending ? (debug)"""
+    fs_send = submitter.submit_record(program_name, project_name, fileSamples_array)
+    try:
+        # now = datetime.now()
+        # resptime = now.strftime("%H:%M:%S")
+        # print('\n         Response for ' + project_name + ' (' + submission_id + ') at ' + resptime + ': ' + str(json.loads(fs_send)["code"]) + '\n')
+        json.loads(fs_send)["code"]
+        
+    except:
+        # now = datetime.now()
+        # resptime = now.strftime("%H:%M:%S")
+        # print('         couldnt print response code for '  + project_name + ' at ' + resptime)
+        print('couldnt get response confirmation from gen3 for '  + project_name + ' sent at ' + printime)
+
     submitter_lock.release()
 
 
@@ -359,7 +379,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
     phenotype_array = []
     phenotype_batch_ids = []
 
-    batch_size = 50
+    batch_size = 500
 
     def send_subjects():
         # print('sending ' + str(len(subject_array)) + ' subjects' + ' for project ' + consent)
@@ -509,7 +529,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
 def createIDLFs(consent, filesSamples, project_name, program_name):
     """debugging dropped sampleFiles with counter"""
     counter = 0
-    batch_size = 20
+    batch_size = 100
     fileSamples_array = []
     fileSamples_batch_ids = []
 
@@ -567,6 +587,7 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
                 if len(fileSamples_array) >= batch_size:
                     counter += len(fileSamples_array)
                     send_fileSamples()
+
     if len(fileSamples_array) > 0:
         counter += len(fileSamples_array)
         send_fileSamples()

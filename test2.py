@@ -76,7 +76,9 @@ def populate_datastage():
         ## create programs from dataset list
         print( "creating program node for " + dataset["accession"] )
 
-        submitter.create_program(program_obj)
+        create = submitter.create_program(program_obj)
+        # if create:
+        #     print(submitter.create_program(program_obj))
         
         ## to run with calls API, uncomment the two function calls below and comment out the `openFiles` and related functions
         # filesAndPhenotypes = getFilesPhenotypes(dss_dataset_id) ##array of arrays, fileSamp, nonSamp, allCon, phenotypes
