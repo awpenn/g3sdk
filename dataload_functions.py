@@ -321,25 +321,22 @@ def createProject(arr):
         createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
 
         ## node generation with multiprocessing
-        # p1 = Process(target=createIDLFs, args=(consent, filesSamples, project_name, program_name))
-        # p2 = Process(target=createALDFs, args=(consent, filesNonSamples, project_name, program_name, "filesNonSamples"))
-        # p3 = Process(target=createALDFs, args=(consent, filesAllConsents, project_name, program_name, "filesAllConsents"))
+        p1 = Process(target=createALDFs, args=(consent, filesNonSamples, project_name, program_name, "filesNonSamples"))
+        p2 = Process(target=createALDFs, args=(consent, filesAllConsents, project_name, program_name, "filesAllConsents"))
+        p3 = Process(target=createIDLFs, args=(consent, filesSamples, project_name, program_name))
 
-        # p1.start()
-        # p2.start()
-        # p3.start()
+        p1.start()
+        p2.start()
+        p3.start()
  
-        # p1.join()
-        # p2.join()
-        # p3.join()
+        p1.join()
+        p2.join()
+        p3.join()
 
 
-        createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
-        createALDFs(consent, filesNonSamples, project_name, program_name, "filesNonSamples")
-        ildfs = createIDLFs(consent, filesSamples, project_name, program_name)
-
-        # """for dropped file debugging 1/28"""
-        print('loop complete for ' + consent + ' with counter = ' + str(ildfs))
+        # createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
+        # createALDFs(consent, filesNonSamples, project_name, program_name, "filesNonSamples")
+        # ildfs = createIDLFs(consent, filesSamples, project_name, program_name)
     
 def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id):
 
@@ -494,8 +491,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
     if len(phenotype_array) > 0:
         send_phenotypes()
 
-def submit_fileSamples(program_name, project_name, fileSamples_array):
-    submission_attempt_counter = 0
+def submit_fileSamples(program_name, project_name, fileSamples_array, submission_attempt_counter = 0):
 
     submission_id = str(round(random.random()*500, 1))
     now = datetime.now()
@@ -505,16 +501,16 @@ def submit_fileSamples(program_name, project_name, fileSamples_array):
     # submitter_lock.acquire()
     """actually sending ? (debug)"""
     fs_send = submitter.submit_record(program_name, project_name, fileSamples_array)
-
+    sleep(5)
     if submission_attempt_counter < 5:
         try:
             json.loads(fs_send)["code"]
         except:
-            print('couldnt get response confirmation from gen3 for '  + project_name + ' sent at ' + printime)
-            sleep(5)
+            print('couldnt get response confirmation from gen3 for '  + project_name + ' sent at ' + printime + ', attempt: ' + str(submission_attempt_counter))
+            sleep(30)
             print('trying again')
-            submit_fileSamples(program_name, project_name, fileSamples_array)
             submission_attempt_counter += 1
+            submit_fileSamples(program_name, project_name, fileSamples_array, submission_attempt_counter)
     
     else:
         print('tried to submit ' + project_name + ' submission starting at ' + printime + ' 5 times. Continuing on.')
@@ -523,8 +519,7 @@ def submit_fileSamples(program_name, project_name, fileSamples_array):
 
 def createIDLFs(consent, filesSamples, project_name, program_name):
     """debugging dropped sampleFiles with counter"""
-    counter = 0
-    batch_size = 100
+    batch_size = 50
     fileSamples_array = []
     fileSamples_batch_ids = []
 
@@ -575,15 +570,11 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
             # submitter.submit_record(program_name, project_name, ildf_obj)
                 
             if len(fileSamples_array) >= batch_size:
-                counter += len(fileSamples_array)
                 send_fileSamples()
 
     if len(fileSamples_array) > 0:
-        counter += len(fileSamples_array)
         send_fileSamples()
 
-    # """counter for debugging"""
-    return counter
         
 def createALDFs(consent, files_list, project_name, program_name, filetype):
     batch_size = 25
