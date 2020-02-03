@@ -33,6 +33,7 @@ def get_datasets():
 """this function will take the nested list returned from get_datasets and use it to build the json or yaml blocks that make up the resources section of the user.yaml file"""
 """dc = calling the get_datasets function"""
 def build_resource_descriptions(dc): 
+    print(template)
     for dataset in dc:
         program_name = dataset[0]
         projects = dataset[1]
@@ -116,8 +117,14 @@ def read_from_file(filename):
     with open("jsondumps/%s.json" % filename, "r") as readfile:
         data = json.load(readfile)
         return data
-        
+
+def open_template():
+    with open("jsondumps/user-template.json", "r") as template_file:
+        template = json.load(template_file)
+        return template
 if __name__ == "__main__":
+    template = open_template()
+
     # data = get_datasets()
     # write_to_file("user-mgmt-datasets-consents", data)
 
