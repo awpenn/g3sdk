@@ -10,9 +10,9 @@ from settings import APIURL, HEADERS
 
 """step one is define all the resources in datastage"""
 def get_datasets():
-    response = requests.get(APIURL+"datasets?includes=datasetVersions", headers=HEADERS)
-    dataset_data = response.json()['data']
-
+    """use method in loadscript to get list of datasets, ultimately resulting in...
+        dataset_data = response.json()
+    """
     datasets_and_consents = []
 
     for dataset in dataset_data:
@@ -24,15 +24,12 @@ def get_datasets():
         
         version_consents = getConsents(dss_dataset_id)
 
-        print(version_consents)
-
         datasets_and_consents.append( [accession_no, version_consents] )
 
-    return datasets_and_consents
+    return [datasets_and_consents]
 
 """this function will take the nested list returned from get_datasets and use it to build the json or yaml blocks that make up the resources section of the user.yaml file"""
-"""dc = calling the get_datasets function"""
-def build_resource_descriptions(dc): 
+def build_resource_descriptions(dc): """dc = calling the get_datasets function"""
     for dataset in dc:
         program_name = dataset[0]
         projects = dataset[1]
@@ -42,8 +39,6 @@ def build_resource_descriptions(dc):
             """add `subresources` block"""
             for project in projects:
                 project_name = program_name + "_" + project
-                print('---')
-                print(project_name)
                 """add to subresources `-{name: project_name}"""
 
 
@@ -54,8 +49,7 @@ def build_resource_descriptions(dc):
 
 
 def get_users_and_apps():
-    """aw - will have to change to paginated collection as elsewhere but fine for now"""
-    subroute = 'api/applications?per_page=500'      
+    subroute = 'api/applications?per_page=500'       """aw - will have to change to paginated collection as elsewhere but fine for now"""
     requrl = APIURL + subroute
     response = requests.get(requrl, headers=HEADERS)
     all_applications = response.json()['data']
@@ -73,7 +67,7 @@ def get_users_and_apps():
 
 """returns a set of ids and emails (may need to be changed to eRA id or whatever in the future) for users that have applications, as well as all the applications"""
 
-# users_and_apps = get_users_and_apps()
+users_and_apps = get_users_and_apps()
 
 def build_user_permissions(users_and_apps):
     users = users_and_apps[0]
@@ -91,8 +85,8 @@ def build_user_permissions(users_and_apps):
                 requrl = APIURL + subroute
                 response = requests.get(requrl, headers=HEADERS)
                 approved_consents = response.json()['data']
-                """will be a list of tuples = dataset and consent to the iterate through for resources"""
-                dataset_and_consent = [] 
+                
+                dataset_and_consent = [] """will be a list of tuples = dataset and consent to the iterate through for resources"""
                 for approved_consent in approved_consents:
                     consent = approved_consent["consent"]["key"]
                     dataset_accession = approved_consent["dataset"]["accession"]
@@ -107,19 +101,3 @@ def build_user_permissions(users_and_apps):
                       privilege: ['read']
                       resource: /programs/[program]/projects/[project]
                     """
-def write_to_file(filename, data):
-    with open("jsondumps/%s.json" % filename, "w") as outfile:
-        """below, data from DSS api requires response.json() , from datastage = response"""
-        json.dump(data, outfile)
-
-def read_from_file(filename):
-    with open("jsondumps/%s.json" % filename, "r") as readfile:
-        data = json.load(readfile)
-        return data
-        
-if __name__ == "__main__":
-    # data = get_datasets()
-    # write_to_file("user-mgmt-datasets-consents", data)
-
-    t = read_from_file("user-mgmt-datasets-consents")
-    build_resource_descriptions(t)
