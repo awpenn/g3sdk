@@ -492,7 +492,6 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
         send_phenotypes()
 
 def submit_fileSamples(program_name, project_name, fileSamples_array, submission_attempt_counter = 0):
-
     submission_id = str(round(random.random()*500, 1))
     now = datetime.now()
     printime = now.strftime("%H:%M:%S")
