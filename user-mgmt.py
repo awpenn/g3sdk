@@ -58,6 +58,7 @@ def build_resource_descriptions(dc):
         template["rbac"]["resources"][0]["subresources"].append(subresource_obj)
     
     """just used to test well-formedness"""
+    print('program/project descriptions created')
     # write_to_file("testuserbuild", template)
 
 
@@ -142,5 +143,7 @@ if __name__ == "__main__":
     # data = get_datasets()
     # write_to_file("user-mgmt-datasets-consents", data)
 
-    t = read_from_file("user-mgmt-datasets-consents")
+    # t = read_from_file("user-mgmt-datasets-consents")
+    t = get_datasets()
     build_resource_descriptions(t)
+    """after build_resource_descriptions runs, `template` will be full doc with rbac section filled out"""
