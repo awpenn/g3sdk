@@ -157,8 +157,8 @@ def build_user_permissions(users_and_apps):
 
 
         template_plus_resources["users"][email] = user_obj ## change this to `template` after testing
-        write_to_file("checking-with-projects", template_plus_resources)
-        break
+    
+    write_to_file("checking-with-projects", template_plus_resources)
 
 def write_to_file(filename, data):
     with open("jsondumps/%s.json" % filename, "w") as outfile:
@@ -175,7 +175,8 @@ def open_template():
         template = json.load(template_file)
         return template
 if __name__ == "__main__":
-    template = open_template()
+
+    # template = open_template()
     template_plus_resources = read_from_file("template_plus_resources")
 
     # data = get_datasets()
