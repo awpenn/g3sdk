@@ -39,13 +39,27 @@ def build_resource_descriptions(dc):
         projects = dataset[1]
 
         """make a resource object in the resource section along the lines of `- name: program_name`"""
+        subresource_obj = {
+            "name": program_name,
+            "subresources": [
+                {
+                "name": "projects",
+                "subresources": []               
+                }
+            ]
+        }
         if len(projects) > 0:
             """add `subresources` block"""
             for project in projects:
                 project_name = program_name + "_" + project
-                print('---')
-                print(project_name)
                 """add to subresources `-{name: project_name}"""
+                subresource_obj["subresources"][0]["subresources"].append( {"name": project_name } )
+        
+        template["rbac"]["resources"][0]["subresources"].append(subresource_obj)
+    
+    """just used to test well-formedness"""
+    # write_to_file("testuserbuild", template)
+
 
 
 
