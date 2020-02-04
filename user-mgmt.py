@@ -61,9 +61,9 @@ def get_users_and_apps():
     for app in all_applications:
         if app["active"] == True:
             user = app["user"]["id"]
-            email = app["user"]["email"]
+            login = app["user"]["user_login"]
 
-            user_tup = (user, email)
+            user_tup = (user, login)
 
             active_users.add(user_tup)
     
@@ -77,9 +77,9 @@ def build_user_permissions(users_and_apps):
 
     for user in users:
         user_id = user[0]
-        email = user[1]
+        user_login = user[1]
 
-        """ultimately added to template as `template["users"][email] = user_obj , where email is the key (template["users"] is a dict)"""
+        """ultimately added to template as `template["users"][user_login] = user_obj , where user_login is the key (template["users"] is a dict)"""
         user_obj = {
             "admin": "false",
             "projects": []
@@ -138,7 +138,7 @@ def build_user_permissions(users_and_apps):
             user_obj["projects"].append(project_obj)
 
 
-        template["users"][email] = user_obj ## change this to `template` after testing
+        template["users"][user_login] = user_obj ## change this to `template` after testing
     
 
 
@@ -173,7 +173,7 @@ if __name__ == "__main__":
 
     build_resource_descriptions(datasets)
     
-    """returns a set of ids and emails (may need to be changed to eRA id or whatever in the future) for users that have applications, as well as all the applications"""
+    """returns a set of ids and eraLogin for users that have applications, as well as all the applications"""
     users_and_apps = get_users_and_apps()
 
     build_user_permissions(users_and_apps)
