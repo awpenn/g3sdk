@@ -68,10 +68,9 @@ def build_resource_descriptions(dc):
 """user info section"""
 """currently, api doesn't support getting a list of users, and if we have users with no applications (?) then no need to add them anyway"""
 
-
 def get_users_and_apps():
     """aw - will have to change to paginated collection as elsewhere but fine for now"""
-    subroute = 'api/applications?per_page=500'      
+    subroute = 'applications?per_page=500'      
     requrl = APIURL + subroute
     response = requests.get(requrl, headers=HEADERS)
     all_applications = response.json()['data']
@@ -85,28 +84,46 @@ def get_users_and_apps():
 
         active_users.add(user_tup)
     
-    return [active_users, all_applications]
+    return [list(active_users), all_applications]
 
 """returns a set of ids and emails (may need to be changed to eRA id or whatever in the future) for users that have applications, as well as all the applications"""
 
 # users_and_apps = get_users_and_apps()
-
+  
 def build_user_permissions(users_and_apps):
     users = users_and_apps[0]
     apps = users_and_apps[1]
 
-    for user in active_users:
-        email = user[0]
-        user_id = user[1]
-        """build a block under `users` section with email, then"""
+    programs = template_plus_resources["rbac"]["resources"][0]["subresources"] ## change template_plus_... to just template after testing
 
-        for app in users_and_apps:
+    for user in users:
+        user_id = user[0]
+        email = user[1]
+
+        """ultimately added to template as `template["users"][email] = user_obj , where email is the key (template["users"] is a dict)"""
+        user_obj = {
+            "admin": "false",
+            "projects": []
+        }
+        """make a program resource for each existing, so can see aggs but still restricted on subject info access"""
+        for program in programs:
+            program_obj = {
+                "auth_id": program["name"],
+                "privilege": [
+                        "read"
+                ], 
+                "resource": "/programs/" + program["name"]
+            }
+            user_obj["projects"].append(program_obj)
+        
+        for app in apps:
             if app["user"]["id"] == user_id:
-
-                subroute = 'api/applications/' + str(app["id"]) + '/approvedConsents'     
+                subroute = 'applications/' + str(app["id"]) + '/approvedConsents'     
                 requrl = APIURL + subroute
+                print(requrl)
                 response = requests.get(requrl, headers=HEADERS)
                 approved_consents = response.json()['data']
+
                 """will be a list of tuples = dataset and consent to the iterate through for resources"""
                 dataset_and_consent = [] 
                 for approved_consent in approved_consents:
@@ -118,11 +135,21 @@ def build_user_permissions(users_and_apps):
                     program = resource_tuple[0]
                     project = program + "_" + resource_tuple[1]
 
-                    """build block under users along the lines of:
-                    - auth_id: [project]
-                      privilege: ['read']
-                      resource: /programs/[program]/projects/[project]
-                    """
+                    project_obj = {
+                        "auth_id": "QA",
+                        "privilege": [
+                            "read"
+                        ],
+                        "resource": "/programs/" + program + "/projects/" + project
+                    }
+
+                    user_obj["projects"].append(project_obj)
+
+
+        template_plus_resources["users"][email] = user_obj ## change this to `template` after testing
+        write_to_file("checking-with-projects", template_plus_resources)
+        break
+
 def write_to_file(filename, data):
     with open("jsondumps/%s.json" % filename, "w") as outfile:
         """below, data from DSS api requires response.json() , from datastage = response"""
@@ -139,11 +166,26 @@ def open_template():
         return template
 if __name__ == "__main__":
     template = open_template()
+    template_plus_resources = read_from_file("template_plus_resources")
 
     # data = get_datasets()
     # write_to_file("user-mgmt-datasets-consents", data)
 
     # t = read_from_file("user-mgmt-datasets-consents")
-    t = get_datasets()
-    build_resource_descriptions(t)
+    # t = get_datasets()
     """after build_resource_descriptions runs, `template` will be full doc with rbac section filled out"""
+    # build_resource_descriptions(t)
+
+    users_and_apps = read_from_file("guaa")
+    build_user_permissions(users_and_apps)
+
+    ## production run
+    # template = open_template()
+
+    # datasets = get_datasets()
+
+    # build_resource_descriptions(datasets)
+
+    # users_and_apps = get_users_and_apps()
+
+    # build_user_permissions(users_and_apps)
