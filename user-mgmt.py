@@ -116,6 +116,9 @@ def build_user_permissions(users_and_apps):
             }
             user_obj["projects"].append(program_obj)
         
+        """removes duplicate permissions across applications"""
+        resource_set = set()
+
         for app in apps:
             if app["user"]["id"] == user_id:
                 subroute = 'applications/' + str(app["id"]) + '/approvedConsents'     
@@ -126,24 +129,31 @@ def build_user_permissions(users_and_apps):
 
                 """will be a list of tuples = dataset and consent to the iterate through for resources"""
                 dataset_and_consent = [] 
+
                 for approved_consent in approved_consents:
                     consent = approved_consent["consent"]["key"]
                     dataset_accession = approved_consent["dataset"]["accession"]
                     dataset_and_consent.append( (dataset_accession, consent) )
-                    
+                
+
                 for resource_tuple in dataset_and_consent:
                     program = resource_tuple[0]
                     project = program + "_" + resource_tuple[1]
+                    resource_path = "/programs/" + program + "/projects/" + project
+                    
+                    resource_set.add(resource_path)
 
-                    project_obj = {
-                        "auth_id": "QA",
-                        "privilege": [
-                            "read"
-                        ],
-                        "resource": "/programs/" + program + "/projects/" + project
-                    }
+        for resource_path in resource_set:
 
-                    user_obj["projects"].append(project_obj)
+            project_obj = {
+                "auth_id": "QA",
+                "privilege": [
+                    "read"
+                ],
+                "resource": resource_path
+            }
+
+            user_obj["projects"].append(project_obj)
 
 
         template_plus_resources["users"][email] = user_obj ## change this to `template` after testing
