@@ -1,14 +1,11 @@
 from dataload_functions import *
-import pandas as pd
 import json
 from requests.auth import AuthBase
 import requests
 
 from settings import APIURL, HEADERS
 
-"""stubbing out how user information will be gatherd to build user.yaml file for gen3 user management"""
 
-"""step one is define all the resources in datastage"""
 def get_datasets():
     response = requests.get(APIURL+"datasets?includes=datasetVersions", headers=HEADERS)
     dataset_data = response.json()['data']
@@ -24,16 +21,11 @@ def get_datasets():
         
         version_consents = getConsents(dss_dataset_id)
 
-        print(version_consents)
-
         datasets_and_consents.append( [accession_no, version_consents] )
 
     return datasets_and_consents
 
-"""this function will take the nested list returned from get_datasets and use it to build the json or yaml blocks that make up the resources section of the user.yaml file"""
-"""dc = calling the get_datasets function"""
 def build_resource_descriptions(dc): 
-    print(template)
     for dataset in dc:
         program_name = dataset[0]
         projects = dataset[1]
@@ -61,13 +53,7 @@ def build_resource_descriptions(dc):
     print('program/project descriptions created')
     # write_to_file("testuserbuild", template)
 
-
-
-
-
-"""user info section"""
 """currently, api doesn't support getting a list of users, and if we have users with no applications (?) then no need to add them anyway"""
-
 def get_users_and_apps():
     """aw - will have to change to paginated collection as elsewhere but fine for now"""
     subroute = 'applications?per_page=500'      
@@ -86,15 +72,11 @@ def get_users_and_apps():
     
     return [list(active_users), all_applications]
 
-"""returns a set of ids and emails (may need to be changed to eRA id or whatever in the future) for users that have applications, as well as all the applications"""
-
-# users_and_apps = get_users_and_apps()
-  
 def build_user_permissions(users_and_apps):
     users = users_and_apps[0]
     apps = users_and_apps[1]
 
-    programs = template_plus_resources["rbac"]["resources"][0]["subresources"] ## change template_plus_... to just template after testing
+    programs = template["rbac"]["resources"][0]["subresources"] ## change template_plus_... to just template after testing
 
     for user in users:
         user_id = user[0]
@@ -123,7 +105,6 @@ def build_user_permissions(users_and_apps):
             if app["user"]["id"] == user_id:
                 subroute = 'applications/' + str(app["id"]) + '/approvedConsents'     
                 requrl = APIURL + subroute
-                print(requrl)
                 response = requests.get(requrl, headers=HEADERS)
                 approved_consents = response.json()['data']
 
@@ -144,9 +125,13 @@ def build_user_permissions(users_and_apps):
                     resource_set.add(resource_path)
 
         for resource_path in resource_set:
+            delim = "/projects/"
+            delimlen = len(delim)
+            slindex = resource_path.index(delim)
+            auth_id = resource_path[ slindex + delimlen:]
 
             project_obj = {
-                "auth_id": "QA",
+                "auth_id": auth_id,
                 "privilege": [
                     "read"
                 ],
@@ -156,10 +141,8 @@ def build_user_permissions(users_and_apps):
             user_obj["projects"].append(project_obj)
 
 
-        template_plus_resources["users"][email] = user_obj ## change this to `template` after testing
+        template["users"][email] = user_obj ## change this to `template` after testing
     
-    write_to_file("checking-with-projects", template_plus_resources)
-
 def write_to_file(filename, data):
     with open("jsondumps/%s.json" % filename, "w") as outfile:
         """below, data from DSS api requires response.json() , from datastage = response"""
@@ -174,29 +157,25 @@ def open_template():
     with open("jsondumps/user-template.json", "r") as template_file:
         template = json.load(template_file)
         return template
+
+def build_yaml(template):
+    """convert json to yaml"""
+
+    """for now 2/4 just going to write final product here"""
+    write_to_file("user", template)
+
+
 if __name__ == "__main__":
 
-    # template = open_template()
-    template_plus_resources = read_from_file("template_plus_resources")
+    template = open_template()
 
-    # data = get_datasets()
-    # write_to_file("user-mgmt-datasets-consents", data)
+    datasets = get_datasets()
 
-    # t = read_from_file("user-mgmt-datasets-consents")
-    # t = get_datasets()
-    """after build_resource_descriptions runs, `template` will be full doc with rbac section filled out"""
-    # build_resource_descriptions(t)
+    build_resource_descriptions(datasets)
+    
+    """returns a set of ids and emails (may need to be changed to eRA id or whatever in the future) for users that have applications, as well as all the applications"""
+    users_and_apps = get_users_and_apps()
 
-    users_and_apps = read_from_file("guaa")
     build_user_permissions(users_and_apps)
 
-    ## production run
-    # template = open_template()
-
-    # datasets = get_datasets()
-
-    # build_resource_descriptions(datasets)
-
-    # users_and_apps = get_users_and_apps()
-
-    # build_user_permissions(users_and_apps)
+    build_yaml(template)
