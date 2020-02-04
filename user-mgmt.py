@@ -48,27 +48,24 @@ def build_resource_descriptions(dc):
                 subresource_obj["subresources"][0]["subresources"].append( {"name": project_name } )
         
         template["rbac"]["resources"][0]["subresources"].append(subresource_obj)
-    
-    """just used to test well-formedness"""
-    print('program/project descriptions created')
-    # write_to_file("testuserbuild", template)
 
 """currently, api doesn't support getting a list of users, and if we have users with no applications (?) then no need to add them anyway"""
 def get_users_and_apps():
     """aw - will have to change to paginated collection as elsewhere but fine for now"""
-    subroute = 'applications?per_page=500'      
+    subroute = 'applications?per_page=500&application_scope=approved'      
     requrl = APIURL + subroute
     response = requests.get(requrl, headers=HEADERS)
     all_applications = response.json()['data']
 
     active_users = set()
     for app in all_applications:
-        user = app['user']['id']
-        email = app['user']['email']
+        if app["active"] == True:
+            user = app["user"]["id"]
+            email = app["user"]["email"]
 
-        user_tup = (user, email)
+            user_tup = (user, email)
 
-        active_users.add(user_tup)
+            active_users.add(user_tup)
     
     return [list(active_users), all_applications]
 
@@ -143,6 +140,9 @@ def build_user_permissions(users_and_apps):
 
         template["users"][email] = user_obj ## change this to `template` after testing
     
+
+
+"""utility functions"""
 def write_to_file(filename, data):
     with open("jsondumps/%s.json" % filename, "w") as outfile:
         """below, data from DSS api requires response.json() , from datastage = response"""
