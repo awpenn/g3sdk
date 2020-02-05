@@ -52,12 +52,14 @@ def build_resource_descriptions(dc):
 """currently, api doesn't support getting a list of users, and if we have users with no applications (?) then no need to add them anyway"""
 def get_users_and_apps():
     """aw - will have to change to paginated collection as elsewhere but fine for now"""
-    subroute = 'applications?per_page=500&application_scope=approved'      
+    subroute = 'applications?application_scope=approved&per_page=500&includes=dar.downloaders'      
     requrl = APIURL + subroute
     response = requests.get(requrl, headers=HEADERS)
+    last_page = response.json()["meta"]["last_page"]
     all_applications = response.json()['data']
 
     active_users = set()
+    total_processed = []
     for app in all_applications:
         if app["active"] == True:
             user = app["user"]["id"]
@@ -66,6 +68,32 @@ def get_users_and_apps():
             user_tup = (user, login)
 
             active_users.add(user_tup)
+
+            if app["dar"]["downloaders"]:
+                for d in app["dar"]["downloaders"]:
+                    downloader_id = d["user"]["id"]
+                    downloader_login = d["user"]["user_login"]
+
+                    downloader_tup = (downloader_id, downloader_login)
+                    active_users.add(downloader_tup)
+
+    if last_page > 1:
+        for page in range( last_page + 1 ):
+            if page < 2:
+                continue
+            else:
+                response = requests.get(requrl + "&page=" + str(page), headers=HEADERS)
+                print('getting paginated data from ' + requrl + "&page=" + str(page))
+                returned_data = response.json()["data"]
+
+                for datum in returned_data:
+                    if app["active"] == True:
+                        user = app["user"]["id"]
+                        login = app["user"]["user_login"]
+
+                        user_tup = (user, login)
+
+                        active_users.add(user_tup)
     
     return [list(active_users), all_applications]
 
@@ -99,7 +127,14 @@ def build_user_permissions(users_and_apps):
         resource_set = set()
 
         for app in apps:
-            if app["user"]["id"] == user_id:
+            """collects downloader ids for the app in loop to check against current user in above loop"""
+            downloader_id_list = []
+            if app["dar"]["downloaders"]:
+                for d in app["dar"]["downloaders"]:
+                    downloader_id = d["user"]["id"]
+                    downloader_id_list.append(downloader_id)
+
+            if app["user"]["id"] == user_id or user_id in downloader_id_list:
                 subroute = 'applications/' + str(app["id"]) + '/approvedConsents'     
                 requrl = APIURL + subroute
                 response = requests.get(requrl, headers=HEADERS)
@@ -121,6 +156,7 @@ def build_user_permissions(users_and_apps):
                     
                     resource_set.add(resource_path)
 
+        """once all the paths that a user could have as user or downloader are gathered and dedupped, make the objects"""
         for resource_path in resource_set:
             delim = "/projects/"
             delimlen = len(delim)
@@ -173,9 +209,9 @@ if __name__ == "__main__":
 
     build_resource_descriptions(datasets)
     
-    """returns a set of ids and eraLogin for users that have applications, as well as all the applications"""
+    """returns a set of ids and eraLogin for users that have applications, their downloaders, as well as all the applications"""
     users_and_apps = get_users_and_apps()
-
+    
     build_user_permissions(users_and_apps)
 
     build_yaml(template)
