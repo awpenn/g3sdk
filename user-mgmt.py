@@ -1,5 +1,6 @@
 from dataload_functions import *
 import json
+import yaml
 from requests.auth import AuthBase
 import requests
 
@@ -109,7 +110,7 @@ def build_user_permissions(users_and_apps):
 
         """ultimately added to template as `template["users"][user_login] = user_obj , where user_login is the key (template["users"] is a dict)"""
         user_obj = {
-            "admin": "false",
+            "admin": False,
             "projects": []
         }
         
@@ -186,9 +187,10 @@ def open_template():
 
 def build_yaml(template):
     """convert json to yaml"""
-
+    user_yaml = yaml.dump(yaml.load(json.dumps(template)), default_flow_style=False)
     """for now 2/4 just going to write final product here"""
-    write_to_file("user", template)
+    with open("jsondumps/user.yaml", "w") as outfile:
+        outfile.write(user_yaml)
 
 
 if __name__ == "__main__":
@@ -205,3 +207,5 @@ if __name__ == "__main__":
     build_user_permissions(users_and_apps)
 
     build_yaml(template)
+    # t = read_from_file("user")
+    # build_yaml(t)
