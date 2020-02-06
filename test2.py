@@ -31,8 +31,8 @@ def populate_datastage():
     printime = now.strftime("%H:%M:%S")
     print('Load program starting at {}').format(printime)
 
-    def openFiles():
     ## 12/19 opening file just for dev, so dont have to go through api call process to test building
+    def openFiles():
         with open("jsondumps/samplesSubjects.json", "r") as json_file:
             """these are all lists"""
             samplesAndSubjects = json.load(json_file)
@@ -106,7 +106,6 @@ def populate_datastage():
             parallelArgs = []
             for consent in chunk:
                 parallelArgs.append([consent, program_name, filesAndPhenotypes, samplesAndSubjects])
-            ## runs three createProjects at once, early tests indicate marked speed increase (3.5 hrs vs 12)
             runInParallel(createProject, parallelArgs)
             
 if __name__ == '__main__':

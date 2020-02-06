@@ -60,6 +60,16 @@ def partition(consents):
         yield consents[i:i + consents_per_chunk]
 
 def runInParallel(fn, args_list):
+    ##
+    """2/6 thinking about how to have smarter project running, so that if they cant run faster in parallel
+    atlease then can run smarter in parallel, ie. two at a time without shorter waiting for longer
+    sketch:
+    move the threading to master-run file, remove chunking and runInParallel.
+    do sth. like:
+    `while current_count < 2: start/join the next two projects in queue of projects (with pop or whatever)
+    if a project_thread.isAlive()! (is not alive), pop the next off the queue and start/join"""
+    ##
+
     threads = []
 
     for consent_args in args_list:

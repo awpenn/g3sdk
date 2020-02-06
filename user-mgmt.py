@@ -112,16 +112,6 @@ def build_user_permissions(users_and_apps):
             "admin": "false",
             "projects": []
         }
-        """make a program resource for each existing, so can see aggs but still restricted on subject info access"""
-        for program in programs:
-            program_obj = {
-                "auth_id": program["name"],
-                "privilege": [
-                        "read"
-                ], 
-                "resource": "/programs/" + program["name"]
-            }
-            user_obj["projects"].append(program_obj)
         
         """removes duplicate permissions across applications"""
         resource_set = set()
