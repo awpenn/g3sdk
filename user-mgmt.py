@@ -188,6 +188,7 @@ def open_template():
 def build_yaml(template):
     """convert json to yaml"""
     user_yaml = yaml.dump(yaml.load(json.dumps(template)), default_flow_style=False)
+    
     """for now 2/4 just going to write final product here"""
     with open("jsondumps/user.yaml", "w") as outfile:
         outfile.write(user_yaml)
