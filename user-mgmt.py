@@ -21,7 +21,7 @@ def get_datasets():
   
         version_consents = getConsents(dss_dataset_id)
 
-        datasets_and_consents.append( [accession_no, version_consents] )
+        datasets_and_consents.append( (accession_no, version_consents) )
 
     return datasets_and_consents
 
