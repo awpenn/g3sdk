@@ -8,7 +8,7 @@ from settings import APIURL, HEADERS
 
 
 def get_datasets():
-    response = requests.get(APIURL+"datasets?includes=datasetVersions", headers=HEADERS)
+    response = requests.get(APIURL+"datasets", headers=HEADERS)
     dataset_data = response.json()['data']
 
     datasets_and_consents = []
@@ -16,10 +16,8 @@ def get_datasets():
     for dataset in dataset_data:
         accession_no = dataset["accession"]
 
-        for version in dataset["datasetVersions"]:
-            if version["active"] == 1:
-                dss_dataset_id = version["id"]
-        
+        dss_dataset_id = dataset["activeVersion"]["id"]
+  
         version_consents = getConsents(dss_dataset_id)
 
         datasets_and_consents.append( [accession_no, version_consents] )
@@ -60,7 +58,6 @@ def get_users_and_apps():
     all_applications = response.json()['data']
 
     active_users = set()
-    total_processed = []
     for app in all_applications:
         if app["active"] == True:
             user = app["user"]["id"]
@@ -95,6 +92,14 @@ def get_users_and_apps():
                         user_tup = (user, login)
 
                         active_users.add(user_tup)
+                        
+                        if app["dar"]["downloaders"]:
+                            for d in app["dar"]["downloaders"]:
+                                downloader_id = d["user"]["id"]
+                                downloader_login = d["user"]["user_login"]
+
+                                downloader_tup = (downloader_id, downloader_login)
+                                active_users.add(downloader_tup)
     
     return [list(active_users), all_applications]
 

@@ -58,11 +58,8 @@ def populate_datastage():
         program_name = dataset["accession"]
         program_url = build_dataset_url( program_name )
         
-        for version in dataset["datasetVersions"]:
-            if version["active"] == 1:
+        dss_dataset_id = dataset["activeVersion"]["id"]
 
-                ## for now (12/10) the 'active version in dss doesnt have the harmonized phenos, so for the whole deal, gonna hardcode datasetVersion2
-                dss_dataset_id = version["id"]
         ## AW- production will have latest_release as a variable
         program_obj = {
             "type": "program",
