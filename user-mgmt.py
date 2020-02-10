@@ -6,6 +6,7 @@ import requests
 
 from settings import APIURL, HEADERS
 
+debug_consent_list = []
 
 def get_datasets():
     response = requests.get(APIURL+"datasets", headers=HEADERS)
@@ -92,7 +93,7 @@ def get_users_and_apps():
                         user_tup = (user, login)
 
                         active_users.add(user_tup)
-                        
+
                         if app["dar"]["downloaders"]:
                             for d in app["dar"]["downloaders"]:
                                 downloader_id = d["user"]["id"]
@@ -104,6 +105,7 @@ def get_users_and_apps():
     return [list(active_users), all_applications]
 
 def build_user_permissions(users_and_apps):
+    project_checklist = build_consent_level_checklist()
     users = users_and_apps[0]
     apps = users_and_apps[1]
 
@@ -148,9 +150,10 @@ def build_user_permissions(users_and_apps):
                 for resource_tuple in dataset_and_consent:
                     program = resource_tuple[0]
                     project = program + "_" + resource_tuple[1]
-                    resource_path = "/programs/" + program + "/projects/" + project
-                    
-                    resource_set.add(resource_path)
+
+                    if project in project_checklist:
+                        resource_path = "/programs/" + program + "/projects/" + project
+                        resource_set.add(resource_path)
 
         """once all the paths that a user could have as user or downloader are gathered and dedupped, make the objects"""
         for resource_path in resource_set:
@@ -198,6 +201,14 @@ def build_yaml(template):
     with open("jsondumps/user.yaml", "w") as outfile:
         outfile.write(user_yaml)
 
+def build_consent_level_checklist():
+    resources = template["rbac"]["resources"][0]["subresources"]
+    checklist = []
+    for program in resources:
+        for project in program["subresources"][0]["subresources"]:
+            checklist.append(project["name"])
+        
+    return checklist
 
 if __name__ == "__main__":
 
