@@ -3,10 +3,9 @@ import json
 import yaml
 from requests.auth import AuthBase
 import requests
+from datetime import datetime
 
 from settings import APIURL, HEADERS
-
-debug_consent_list = []
 
 def get_datasets():
     response = requests.get(APIURL+"datasets", headers=HEADERS)
@@ -60,7 +59,10 @@ def get_users_and_apps():
 
     active_users = set()
     for app in all_applications:
-        if app["active"] == True:
+        expiration_date_unformatted = app["expiration_date"].replace("T", " ")
+        expiration_date = datetime.strptime(expiration_date_unformatted[ :expiration_date_unformatted.index('.')], '%Y-%m-%d %H:%M:%S') 
+       
+        if app["active"] and not app["dar"]["close_out_status"] and expiration_date > current_time:
             user = app["user"]["id"]
             login = app["user"]["user_login"]
 
@@ -75,6 +77,8 @@ def get_users_and_apps():
 
                     downloader_tup = (downloader_id, downloader_login)
                     active_users.add(downloader_tup)
+        else:
+            print('nada')
 
     if last_page > 1:
         for page in range( last_page + 1 ):
@@ -211,6 +215,7 @@ def build_consent_level_checklist():
     return checklist
 
 if __name__ == "__main__":
+    current_time = datetime.now()
 
     template = open_template()
 
