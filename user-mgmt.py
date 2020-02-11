@@ -109,7 +109,7 @@ def build_user_permissions(users_and_apps):
     users = users_and_apps[0]
     apps = users_and_apps[1]
 
-    programs = template["rbac"]["resources"][0]["subresources"] ## change template_plus_... to just template after testing
+    programs = template["rbac"]["resources"][0]["subresources"]
 
     for user in users:
         user_id = user[0]
