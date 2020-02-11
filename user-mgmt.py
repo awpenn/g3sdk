@@ -216,7 +216,6 @@ def build_consent_level_checklist():
 
 if __name__ == "__main__":
     current_time = datetime.now()
-
     template = open_template()
 
     datasets = get_datasets()
