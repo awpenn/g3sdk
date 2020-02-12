@@ -77,8 +77,6 @@ def get_users_and_apps():
 
                     downloader_tup = (downloader_id, downloader_login)
                     active_users.add(downloader_tup)
-        else:
-            print('nada')
 
     if last_page > 1:
         for page in range( last_page + 1 ):
@@ -110,6 +108,7 @@ def get_users_and_apps():
 
 def build_user_permissions(users_and_apps):
     project_checklist = build_consent_level_checklist()
+
     users = users_and_apps[0]
     apps = users_and_apps[1]
 
@@ -217,7 +216,7 @@ def build_consent_level_checklist():
     for program in resources:
         for project in program["subresources"][0]["subresources"]:
             checklist.append(project["name"])
-        
+    
     return checklist
 
 if __name__ == "__main__":
@@ -231,7 +230,7 @@ if __name__ == "__main__":
     """returns a set of ids and eraLogin for users that have applications, their downloaders, as well as all the applications"""
     users_and_apps = get_users_and_apps()
 
-    # build_user_permissions(users_and_apps)
+    build_user_permissions(users_and_apps)
 
     build_yaml(template)
     t = read_from_file("user")
