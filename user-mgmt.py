@@ -172,8 +172,8 @@ def build_user_permissions(users_and_apps):
             grant_all_consent = check_program_for_allcon(resource_path, system_resource_dict, user_resource_dict)
             
             if grant_all_consent and program not in programs_granted_all_consent:
-                auth_id = "ALL"
-                res_path = "/programs/" + program + "/projects/ALL"
+                auth_id = program+ "_" + "ALL"
+                res_path = "/programs/" + program + "/projects/" + auth_id
                 programs_granted_all_consent.add(program)
 
                 project_obj = {
@@ -204,7 +204,13 @@ def build_user_permissions(users_and_apps):
                 user_obj["projects"].append(project_obj)
 
         template["users"][user_login] = user_obj
-    
+
+def add_ALL_to_resource_tree():
+
+    for program in template["rbac"]["resources"][0]["subresources"]: ##change to use real template once built
+        project_name = program["name"] + "_" + "ALL"
+        program["subresources"][0]["subresources"].append( {"name": project_name } )
+
 """utility functions"""
 def write_to_file(filename, data):
     with open("jsondumps/%s.json" % filename, "w") as outfile:
@@ -237,7 +243,6 @@ def build_consent_level_checklist():
             checklist.append(project["name"])
     
     return checklist
-
 
 def parse_resource_path(resource_path):
     delim = "/projects/"
@@ -352,5 +357,7 @@ if __name__ == "__main__":
     users_and_apps = get_users_and_apps()
 
     build_user_permissions(users_and_apps)
+
+    add_ALL_to_resource_tree()
 
     build_yaml(template)
