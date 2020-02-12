@@ -108,11 +108,11 @@ def get_users_and_apps():
 
 def build_user_permissions(users_and_apps):
     project_checklist = build_consent_level_checklist()
+    
+    system_resource_dict = create_system_checkstrings(project_checklist)
 
     users = users_and_apps[0]
     apps = users_and_apps[1]
-
-    programs = template["rbac"]["resources"][0]["subresources"]
 
     for user in users:
         user_id = user[0]
@@ -126,8 +126,7 @@ def build_user_permissions(users_and_apps):
         
         """removes duplicate permissions across applications"""
         resource_set = set()
-        program_resource_dict = {}
-
+        programs_granted_all_consent = set()
         for app in apps:
             """collects downloader ids for the app in loop to check against current user in above loop"""
             downloader_id_list = []
@@ -149,43 +148,63 @@ def build_user_permissions(users_and_apps):
                     consent = approved_consent["consent"]["key"]
                     dataset_accession = approved_consent["dataset"]["accession"]
                     dataset_and_consent.append( (dataset_accession, consent) )
-                
 
+                """actually creating the permissions"""
                 for resource_tuple in dataset_and_consent:
                     program = resource_tuple[0]
                     project = program + "_" + resource_tuple[1]
-
-                    """preparing the dict of checkstrings to determine ALL consent assignment"""
-                    if program not in program_resource_dict:
-                        program_resource_dict[program] = ''
 
                     if project in project_checklist:
                         resource_path = "/programs/" + program + "/projects/" + project
                         resource_set.add(resource_path)
 
-        print(program_resource_dict)
         """once all the paths that a user could have as user or downloader are gathered and dedupped, make the objects"""
+
+        user_resource_dict = create_user_checkstrings(resource_set)
+  
+        ## if strings match, only add "ALL", else do for resource_path in resource_set below
+
+
         for resource_path in resource_set:
-            delim = "/projects/"
-            delimlen = len(delim)
-            slindex = resource_path.index(delim)
-            auth_id = resource_path[ slindex + delimlen:]
+            program = parse_resource_path(resource_path)[0]
+            auth_id = None
+            res_path = resource_path
+            grant_all_consent = check_program_for_allcon(resource_path, system_resource_dict, user_resource_dict)
+            
+            if grant_all_consent and program not in programs_granted_all_consent:
+                auth_id = "ALL"
+                res_path = "/programs/" + program + "/projects/ALL"
+                programs_granted_all_consent.add(program)
 
-            project_obj = {
-                "auth_id": auth_id,
-                "privilege": [
-                    "read"
-                ],
-                "resource": resource_path
-            }
+                project_obj = {
+                    "auth_id": auth_id,
+                    "privilege": [
+                        "read"
+                    ],
+                    "resource": res_path
+                }
 
-            user_obj["projects"].append(project_obj)
+                programs_granted_all_consent.add(program)
+                user_obj["projects"].append(project_obj)
 
+            elif program not in programs_granted_all_consent:
+                delim = "/projects/"
+                delimlen = len(delim)
+                slindex = resource_path.index(delim)
+                auth_id = resource_path[ slindex + delimlen:]
 
-        template["users"][user_login] = user_obj ## change this to `template` after testing
+                project_obj = {
+                    "auth_id": auth_id,
+                    "privilege": [
+                        "read"
+                    ],
+                    "resource": res_path
+                }
+
+                user_obj["projects"].append(project_obj)
+
+        template["users"][user_login] = user_obj
     
-
-
 """utility functions"""
 def write_to_file(filename, data):
     with open("jsondumps/%s.json" % filename, "w") as outfile:
@@ -219,6 +238,108 @@ def build_consent_level_checklist():
     
     return checklist
 
+
+def parse_resource_path(resource_path):
+    delim = "/projects/"
+    delimlen = len(delim)
+    slindex = resource_path.index(delim)
+    consent = resource_path[ slindex + delimlen:]
+
+    prog_delimlen = len("/programs/")
+    program = resource_path[ prog_delimlen:slindex ]
+        
+    return [program, consent]
+        
+def create_user_checkstrings(resource_set):
+
+    """takes a set of resource_paths created from app loop"""
+    user_resource_dict = {}
+
+    for resource_path in resource_set:
+        parsed_program_consent = parse_resource_path(resource_path)
+
+        program = parsed_program_consent[0]
+
+        if program not in user_resource_dict:
+            user_resource_dict[program] = ''
+    
+
+    for key in user_resource_dict:
+        program_sortset = set()
+        program_sortstring = ''
+        for resource in resource_set:
+            parsed_program_consent = parse_resource_path(resource)
+
+            program = parsed_program_consent[0]
+            consent = parsed_program_consent[1]
+                        
+            if program == key:
+                program_sortset.add(consent)
+                    
+        for project in sorted(list(program_sortset)):
+
+            if program_sortstring:
+                program_sortstring += project
+            else:
+                program_sortstring = project
+                    
+        user_resource_dict[key] = program_sortstring
+    
+    return user_resource_dict
+
+def create_system_checkstrings(project_checklist):
+    system_resource_dict = {}
+
+    def parse_resource(resource):
+        slindex = resource.index("_")
+        program = resource[:slindex]
+        project = resource[slindex + 1:]
+
+        return [program, project]
+
+    for resource in project_checklist:
+        program = parse_resource(resource)[0]
+
+        if program not in system_resource_dict:
+            system_resource_dict[program] = ''
+    
+    for key in system_resource_dict:
+        program_sortset = set()
+        program_sortstring = ''
+
+        for resource in project_checklist:
+            parsed_program_consent = parse_resource(resource)
+
+            program = parsed_program_consent[0]
+            consent = parsed_program_consent[1]
+
+            project = program + "_" + consent
+
+            if program == key:
+                program_sortset.add(project)
+
+        for project in sorted(list(program_sortset)):
+
+            if program_sortstring:
+                program_sortstring += project
+            else:
+                program_sortstring = project
+                    
+        system_resource_dict[key] = program_sortstring
+    
+    return system_resource_dict
+
+def check_program_for_allcon(resource, system_resource_dict, user_resource_dict):
+    program = parse_resource_path(resource)[0]
+
+    if system_resource_dict[program] == user_resource_dict[program]:
+        return True
+    else:
+        return False
+
+
+
+
 if __name__ == "__main__":
     current_time = datetime.now()
     template = open_template()
@@ -233,5 +354,3 @@ if __name__ == "__main__":
     build_user_permissions(users_and_apps)
 
     build_yaml(template)
-    t = read_from_file("user")
-    build_yaml(t)
