@@ -127,6 +127,7 @@ def build_user_permissions(users_and_apps):
         
         """removes duplicate permissions across applications"""
         resource_set = set()
+        program_resource_dict = {}
 
         for app in apps:
             """collects downloader ids for the app in loop to check against current user in above loop"""
@@ -155,10 +156,15 @@ def build_user_permissions(users_and_apps):
                     program = resource_tuple[0]
                     project = program + "_" + resource_tuple[1]
 
+                    """preparing the dict of checkstrings to determine ALL consent assignment"""
+                    if program not in program_resource_dict:
+                        program_resource_dict[program] = ''
+
                     if project in project_checklist:
                         resource_path = "/programs/" + program + "/projects/" + project
                         resource_set.add(resource_path)
 
+        print(program_resource_dict)
         """once all the paths that a user could have as user or downloader are gathered and dedupped, make the objects"""
         for resource_path in resource_set:
             delim = "/projects/"
@@ -224,9 +230,9 @@ if __name__ == "__main__":
     
     """returns a set of ids and eraLogin for users that have applications, their downloaders, as well as all the applications"""
     users_and_apps = get_users_and_apps()
-    
-    build_user_permissions(users_and_apps)
+
+    # build_user_permissions(users_and_apps)
 
     build_yaml(template)
-    # t = read_from_file("user")
-    # build_yaml(t)
+    t = read_from_file("user")
+    build_yaml(t)
