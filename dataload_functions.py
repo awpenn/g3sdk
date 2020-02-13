@@ -157,9 +157,9 @@ def getSamplesSubjects(dss_dataset_id):
             continue
     
         print(str(len(sample_dict)) + " subjects currently in this dataset")
-    with open("jsondumps/%s.json" % "samplesSubjects", "a") as outfile:
-    # below, data from DSS api requires response.json() , from datastage = response
-        json.dump(sample_dict, outfile)
+    # with open("jsondumps/%s.json" % "samplesSubjects", "a") as outfile:
+    # """below, data from DSS api requires response.json() , from datastage = response"""
+    #     json.dump(sample_dict, outfile)
     return sample_dict
 
 def getConsents(dss_dataset_id):
@@ -254,9 +254,9 @@ def getData(dss_dataset_id, filetype):
 
     print(str(len(data_list)) + " " + filetype + " data found for datasetVersion " + str(dss_dataset_id))
 
-    with open("jsondumps/%s.json" % filetype, "a") as outfile:
-    # below, data from DSS api requires response.json() , from datastage = response
-        json.dump(data_list, outfile)
+    # with open("jsondumps/%s.json" % filetype, "a") as outfile:
+    # """below, data from DSS api requires response.json() , from datastage = response"""
+    #     json.dump(data_list, outfile)
 
     return data_list
 
