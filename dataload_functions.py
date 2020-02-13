@@ -21,8 +21,6 @@ endpoint = "https://gen3test.lisanwanglab.org"
 auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 
 submitter = Gen3Submission(endpoint, auth)
-
-submitter_lock = threading.Lock()
  
 def phenotype_prettifier(rawInput):
     """smart uppercasing of lowercase phenotype values"""
@@ -331,17 +329,17 @@ def createProject(arr):
         createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
 
         ## node generation with multiprocessing
-        p1 = Process(target=createALDFs, args=(consent, filesNonSamples, project_name, program_name, "filesNonSamples"))
-        p2 = Process(target=createALDFs, args=(consent, filesAllConsents, project_name, program_name, "filesAllConsents"))
-        p3 = Process(target=createIDLFs, args=(consent, filesSamples, project_name, program_name))
+        t1 = threading.Thread(target=createALDFs, args=(consent, filesNonSamples, project_name, program_name, "filesNonSamples"))
+        t2 = threading.Thread(target=createALDFs, args=(consent, filesAllConsents, project_name, program_name, "filesAllConsents"))
+        t3 = threading.Thread(target=createIDLFs, args=(consent, filesSamples, project_name, program_name))
 
-        p1.start()
-        p2.start()
-        p3.start()
+        t1.start()
+        t2.start()
+        t3.start()
  
-        p1.join()
-        p2.join()
-        p3.join()
+        t1.join()
+        t2.join()
+        t3.join()
 
 
         # createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
@@ -506,9 +504,6 @@ def submit_fileSamples(program_name, project_name, fileSamples_array, submission
     now = datetime.now()
     printime = now.strftime("%H:%M:%S")
     
-    """1/30 remove locking mech?"""
-    # submitter_lock.acquire()
-    """actually sending ? (debug)"""
     fs_send = submitter.submit_record(program_name, project_name, fileSamples_array)
     sleep(5)
     if submission_attempt_counter < 5:
@@ -523,8 +518,6 @@ def submit_fileSamples(program_name, project_name, fileSamples_array, submission
     
     else:
         print('tried to submit ' + project_name + ' submission starting at ' + printime + ' 5 times. Continuing on.')
-
-    # submitter_lock.release()
 
 def createIDLFs(consent, filesSamples, project_name, program_name):
     """debugging dropped sampleFiles with counter"""
