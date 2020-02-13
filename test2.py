@@ -82,6 +82,9 @@ def populate_datastage():
         # samplesAndSubjects = getSamplesSubjects(dss_dataset_id) ## sampleDict (with subject info `included`)
         
         consents = getConsents(dss_dataset_id)
+        """puts ALL at beginning of consents list"""
+        # consents.insert(0, "ALL")
+
         dataFromFiles = openFiles()
 
         filesAndPhenotypes = dataFromFiles[0]

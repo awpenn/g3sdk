@@ -21,8 +21,6 @@ endpoint = "https://gen3test.lisanwanglab.org"
 auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
 
 submitter = Gen3Submission(endpoint, auth)
-
-submitter_lock = threading.Lock()
  
 def phenotype_prettifier(rawInput):
     """smart uppercasing of lowercase phenotype values"""
@@ -127,7 +125,7 @@ def getSamplesSubjects(dss_dataset_id):
         request_url = APIURL+"sampleSets/"+str(sample_set["id"])+"/samples"
         print('checking to see if there are samples from files from ' + request_url)
         response = requests.get(request_url, headers=HEADERS)
-        if len(response.json()["data"]) > 0:
+        if "data" in response.json():
 
             request_url = APIURL+"sampleSets/"+str(sample_set["id"])+"/samples?includes=subject.fullConsent&per_page=1000"
             print( 'getting samples from ' + request_url )
@@ -157,11 +155,17 @@ def getSamplesSubjects(dss_dataset_id):
             continue
     
         print(str(len(sample_dict)) + " subjects currently in this dataset")
+<<<<<<< HEAD
 
     # with open("jsondumps/%s.json" % "samplesSubjects", "a") as outfile:
     # """below, data from DSS api requires response.json() , from datastage = response"""
     #     json.dump(sample_dict, outfile)
 
+=======
+    # with open("jsondumps/%s.json" % "samplesSubjects", "a") as outfile:
+    # """below, data from DSS api requires response.json() , from datastage = response"""
+    #     json.dump(sample_dict, outfile)
+>>>>>>> ALL_consent_nodupe_data
     return sample_dict
 
 def getConsents(dss_dataset_id):
@@ -223,7 +227,7 @@ def getData(dss_dataset_id, filetype):
 
     print('checking to see if there are data from ' + request_url)
     response = requests.get(request_url, headers=HEADERS)
-    if len(response.json()["data"]) > 0:
+    if "data" in response.json():
         if filetype == 'fileSamples':
             request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/"+filetype+"?includes=sample.subject.fullConsent,fileset&per_page=9000"
         elif 'file' in filetype:
@@ -259,7 +263,10 @@ def getData(dss_dataset_id, filetype):
     # with open("jsondumps/%s.json" % filetype, "a") as outfile:
     # """below, data from DSS api requires response.json() , from datastage = response"""
     #     json.dump(data_list, outfile)
+<<<<<<< HEAD
     # print('file written')
+=======
+>>>>>>> ALL_consent_nodupe_data
 
     return data_list
 
@@ -291,7 +298,7 @@ def createProject(arr):
 
     # print('creating project, {} unique subject ids found').format(str(len(project_sample_set)))
 
-    if len(project_sample_set) > 0:
+    if project_sample_set:
         project_name = program_name+"_"+consent
         project_obj = {
             "type": "project",
@@ -334,17 +341,17 @@ def createProject(arr):
         createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
 
         ## node generation with multiprocessing
-        p1 = Process(target=createALDFs, args=(consent, filesNonSamples, project_name, program_name, "filesNonSamples"))
-        p2 = Process(target=createALDFs, args=(consent, filesAllConsents, project_name, program_name, "filesAllConsents"))
-        p3 = Process(target=createIDLFs, args=(consent, filesSamples, project_name, program_name))
+        t1 = threading.Thread(target=createALDFs, args=(consent, filesNonSamples, project_name, program_name, "filesNonSamples"))
+        t2 = threading.Thread(target=createALDFs, args=(consent, filesAllConsents, project_name, program_name, "filesAllConsents"))
+        t3 = threading.Thread(target=createIDLFs, args=(consent, filesSamples, project_name, program_name))
 
-        p1.start()
-        p2.start()
-        p3.start()
+        t1.start()
+        t2.start()
+        t3.start()
  
-        p1.join()
-        p2.join()
-        p3.join()
+        t1.join()
+        t2.join()
+        t3.join()
 
 
         # createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
@@ -495,13 +502,13 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                 if len(phenotype_array) >= batch_size:
                     send_phenotypes()
     """if there are subjects/samples/phenotypes remaining in a <500 node batch at end of loop, send"""
-    if len(subject_array) > 0:
+    if subject_array:
         send_subjects()
 
-    if len(sample_array) > 0:
+    if sample_array:
         send_samples()
 
-    if len(phenotype_array) > 0:
+    if phenotype_array:
         send_phenotypes()
 
 def submit_fileSamples(program_name, project_name, fileSamples_array, submission_attempt_counter = 0):
@@ -509,9 +516,6 @@ def submit_fileSamples(program_name, project_name, fileSamples_array, submission
     now = datetime.now()
     printime = now.strftime("%H:%M:%S")
     
-    """1/30 remove locking mech?"""
-    # submitter_lock.acquire()
-    """actually sending ? (debug)"""
     fs_send = submitter.submit_record(program_name, project_name, fileSamples_array)
     sleep(5)
     if submission_attempt_counter < 5:
@@ -526,8 +530,6 @@ def submit_fileSamples(program_name, project_name, fileSamples_array, submission
     
     else:
         print('tried to submit ' + project_name + ' submission starting at ' + printime + ' 5 times. Continuing on.')
-
-    # submitter_lock.release()
 
 def createIDLFs(consent, filesSamples, project_name, program_name):
     """debugging dropped sampleFiles with counter"""
@@ -584,7 +586,7 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
             if len(fileSamples_array) >= batch_size:
                 send_fileSamples()
 
-    if len(fileSamples_array) > 0:
+    if fileSamples_array:
         send_fileSamples()
 
         
@@ -693,10 +695,10 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
 
     if filetype == 'filesNonSamples':
         create_non_sample_file()
-        if len(fileNonSamples_array) > 0:
+        if fileNonSamples_array:
             send_fileNonSamples()
 
     elif filetype == 'filesAllConsents':
         create_all_consent_file()
-        if len(fileAllConsents_array) > 0:
+        if fileAllConsents_array:
             send_fileAllConsents()
