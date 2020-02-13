@@ -127,7 +127,7 @@ def getSamplesSubjects(dss_dataset_id):
         request_url = APIURL+"sampleSets/"+str(sample_set["id"])+"/samples"
         print('checking to see if there are samples from files from ' + request_url)
         response = requests.get(request_url, headers=HEADERS)
-        if response.json()["data"]:
+        if "data" in response.json():
 
             request_url = APIURL+"sampleSets/"+str(sample_set["id"])+"/samples?includes=subject.fullConsent&per_page=1000"
             print( 'getting samples from ' + request_url )
@@ -221,7 +221,7 @@ def getData(dss_dataset_id, filetype):
 
     print('checking to see if there are data from ' + request_url)
     response = requests.get(request_url, headers=HEADERS)
-    if len(response.json()["data"]) > 0:
+    if "data" in response.json():
         if filetype == 'fileSamples':
             request_url = APIURL+"datasetVersions/"+str(dss_dataset_id)+"/"+filetype+"?includes=sample.subject.fullConsent,fileset&per_page=9000"
         elif 'file' in filetype:
@@ -288,7 +288,7 @@ def createProject(arr):
 
     # print('creating project, {} unique subject ids found').format(str(len(project_sample_set)))
 
-    if len(project_sample_set) > 0:
+    if project_sample_set:
         project_name = program_name+"_"+consent
         project_obj = {
             "type": "project",
@@ -492,13 +492,13 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                 if len(phenotype_array) >= batch_size:
                     send_phenotypes()
     """if there are subjects/samples/phenotypes remaining in a <500 node batch at end of loop, send"""
-    if len(subject_array) > 0:
+    if subject_array:
         send_subjects()
 
-    if len(sample_array) > 0:
+    if sample_array:
         send_samples()
 
-    if len(phenotype_array) > 0:
+    if phenotype_array:
         send_phenotypes()
 
 def submit_fileSamples(program_name, project_name, fileSamples_array, submission_attempt_counter = 0):
@@ -581,7 +581,7 @@ def createIDLFs(consent, filesSamples, project_name, program_name):
             if len(fileSamples_array) >= batch_size:
                 send_fileSamples()
 
-    if len(fileSamples_array) > 0:
+    if fileSamples_array:
         send_fileSamples()
 
         
@@ -690,10 +690,10 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
 
     if filetype == 'filesNonSamples':
         create_non_sample_file()
-        if len(fileNonSamples_array) > 0:
+        if fileNonSamples_array:
             send_fileNonSamples()
 
     elif filetype == 'filesAllConsents':
         create_all_consent_file()
-        if len(fileAllConsents_array) > 0:
+        if fileAllConsents_array:
             send_fileAllConsents()
