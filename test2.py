@@ -33,20 +33,20 @@ def populate_datastage():
 
     ## 12/19 opening file just for dev, so dont have to go through api call process to test building
     def openFiles():
-        with open("jsondumps/samplesSubjects.json", "r") as json_file:
+        with open("jsondumps/SAVE-samplesSubjects.json", "r") as json_file:
             """these are all lists"""
             samplesAndSubjects = json.load(json_file)
 
-        with open("jsondumps/fileSamples.json", "r") as json_file:
+        with open("jsondumps/SAVE-fileSamples.json", "r") as json_file:
             filesSamples = json.load(json_file)
 
-        with open("jsondumps/fileNonSamples.json", "r") as json_file:
+        with open("jsondumps/SAVE-fileNonSamples.json", "r") as json_file:
             filesNonSamples = json.load(json_file)
 
-        with open("jsondumps/fileAllConsents.json", "r") as json_file:
+        with open("jsondumps/SAVE-fileAllConsents.json", "r") as json_file:
             filesAllConsents = json.load(json_file)
 
-        with open("jsondumps/phenotypes.json", "r") as json_file:
+        with open("jsondumps/SAVE-phenotypes.json", "r") as json_file:
             phenotypes = json.load(json_file)
                 
         filesAndPhenotypes = [filesSamples, filesNonSamples, filesAllConsents, phenotypes]
@@ -78,7 +78,7 @@ def populate_datastage():
         #     print(submitter.create_program(program_obj))
         
         ## to run with calls API, uncomment the two function calls below and comment out the `openFiles` and related functions
-        # filesAndPhenotypes = getFilesPhenotypes(dss_dataset_id) ##array of arrays, fileSamp, nonSamp, allCon, phenotypes
+        #filesAndPhenotypes = getFilesPhenotypes(dss_dataset_id) ##array of arrays, fileSamp, nonSamp, allCon, phenotypes
         # samplesAndSubjects = getSamplesSubjects(dss_dataset_id) ## sampleDict (with subject info `included`)
         
         consents = getConsents(dss_dataset_id)
