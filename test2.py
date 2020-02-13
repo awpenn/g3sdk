@@ -78,14 +78,14 @@ def populate_datastage():
         #     print(submitter.create_program(program_obj))
         
         ## to run with calls API, uncomment the two function calls below and comment out the `openFiles` and related functions
-        # filesAndPhenotypes = getFilesPhenotypes(dss_dataset_id) ##array of arrays, fileSamp, nonSamp, allCon, phenotypes
-        # samplesAndSubjects = getSamplesSubjects(dss_dataset_id) ## sampleDict (with subject info `included`)
+        filesAndPhenotypes = getFilesPhenotypes(dss_dataset_id) ##array of arrays, fileSamp, nonSamp, allCon, phenotypes
+        samplesAndSubjects = getSamplesSubjects(dss_dataset_id) ## sampleDict (with subject info `included`)
         
         consents = getConsents(dss_dataset_id)
-        dataFromFiles = openFiles()
+        # dataFromFiles = openFiles()
 
-        filesAndPhenotypes = dataFromFiles[0]
-        samplesAndSubjects = dataFromFiles[1]
+        # filesAndPhenotypes = dataFromFiles[0]
+        # samplesAndSubjects = dataFromFiles[1]
 
 
         # datasetReport(consents, program_name, filesAndPhenotypes, samplesAndSubjects)

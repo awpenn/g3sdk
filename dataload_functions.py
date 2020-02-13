@@ -127,7 +127,7 @@ def getSamplesSubjects(dss_dataset_id):
         request_url = APIURL+"sampleSets/"+str(sample_set["id"])+"/samples"
         print('checking to see if there are samples from files from ' + request_url)
         response = requests.get(request_url, headers=HEADERS)
-        if len(response.json()["data"]) > 0:
+        if response.json()["data"]:
 
             request_url = APIURL+"sampleSets/"+str(sample_set["id"])+"/samples?includes=subject.fullConsent&per_page=1000"
             print( 'getting samples from ' + request_url )
