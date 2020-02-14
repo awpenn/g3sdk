@@ -372,12 +372,13 @@ def createProject(arr):
             createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
 
         ## node generation with multiprocessing
-            # t1 = threading.Thread(target=createALDFs, args=(consent, filesNonSamples, project_name, program_name, "filesNonSamples"))
+            
             create_associated_files_project(program_name, project_name, consent, filesNonSamples)
             createILDFs(consent, filesSamples, project_name, program_name)
 
         else:
             createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
+            createALDFs("null", filesNonSamples, project_name, program_name, "filesNonSamples")
 
         # createALDFs(consent, filesNonSamples, project_name, program_name, "filesNonSamples")
         # ildfs = createILDFs(consent, filesSamples, project_name, program_name)
@@ -636,9 +637,6 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
         submitter.submit_record(program_name, project_name, fileAllConsents_array)
         del fileAllConsents_array[:]
         del fileAllConsents_batch_ids[:]
-
-    def create_none_consent_file():
-        print('cncf')
 
     def create_non_sample_file():
         for file in files_list:
