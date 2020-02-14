@@ -263,6 +263,46 @@ def getData(dss_dataset_id, filetype):
 
 
 ## [consent, program_name, filesAndPhenotypes, samplesAndSubjects]
+def create_associated_files_project(program_name, sibling_project, consent, files_list):
+    
+    files_project_name = sibling_project + "_files"
+    files_project_obj = {
+        "type": "project",
+        "dbgap_accession_number": files_project_name,
+        "name": files_project_name,
+        "code": files_project_name,
+        "availability_type": "Restricted"
+    }
+
+    submitter.create_project(program_name, files_project_obj)
+    
+    query = '{project(name:\"%s\"){id}}' % files_project_name
+    # print(query)
+    """with multiprocessing, sometimes projects dont get created correctly, so this tries to query for the id, if it doesn't work it tries to create project again"""
+    for x in range(0,5):
+        try:
+            fetched_project_id = submitter.query(query)["data"]["project"][0]["id"]
+            break
+        except Exception as query_error:
+            print('failon ' + query + '\n')
+            submitter.create_project(program_name, files_project_obj)
+            sleep(5)
+                
+
+    files_cmc_obj = {
+        "*collection_type": "Consent-Level File Manifest", 
+        "description": "Core Metadata Collection for "+files_project_name, 
+        "type": "core_metadata_collection", 
+        "submitter_id": files_project_name+"_"+"core_metadata_collection",
+        "projects": {
+            "id": fetched_project_id
+        }
+    }
+
+    submitter.submit_record(program_name, files_project_name, files_cmc_obj)
+    
+    createALDFs(consent, files_list, files_project_name, program_name, "filesNonSamples")
+    print('')
 
 def createProject(arr):
     consent = arr[0]
@@ -277,7 +317,7 @@ def createProject(arr):
     now = datetime.now()
     printime = now.strftime("%H:%M:%S")
     print('\n--Creating project for {} in {} at {}').format(consent, program_name, printime)
-    # print('Starting project {} build at {}').format(consent, calendar.timegm(time.gmtime()))
+    
 
     project_sample_set = set({})
     for key, sample in samplesAndSubjects.iteritems():
@@ -332,21 +372,16 @@ def createProject(arr):
             createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
 
         ## node generation with multiprocessing
-            t1 = threading.Thread(target=createALDFs, args=(consent, filesNonSamples, project_name, program_name, "filesNonSamples"))
-            t2 = threading.Thread(target=createIDLFs, args=(consent, filesSamples, project_name, program_name))
-
-            t1.start()
-            t2.start()
-    
-            t1.join()
-            t2.join()
+            # t1 = threading.Thread(target=createALDFs, args=(consent, filesNonSamples, project_name, program_name, "filesNonSamples"))
+            create_associated_files_project(program_name, project_name, consent, filesNonSamples)
+            createILDFs(consent, filesSamples, project_name, program_name)
 
         else:
             createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
-     
+
         # createALDFs(consent, filesNonSamples, project_name, program_name, "filesNonSamples")
-        # ildfs = createIDLFs(consent, filesSamples, project_name, program_name)
-    
+        # ildfs = createILDFs(consent, filesSamples, project_name, program_name)
+        
 def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id):
 
     """for handling the batching"""
@@ -520,7 +555,7 @@ def submit_fileSamples(program_name, project_name, fileSamples_array, submission
     else:
         print('tried to submit ' + project_name + ' submission starting at ' + printime + ' 5 times. Continuing on.')
 
-def createIDLFs(consent, filesSamples, project_name, program_name):
+def createILDFs(consent, filesSamples, project_name, program_name):
     """debugging dropped sampleFiles with counter"""
     batch_size = 50
     fileSamples_array = []
