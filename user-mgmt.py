@@ -168,9 +168,10 @@ def build_user_permissions(users_and_apps):
         for resource_path in resource_set:
             program = parse_resource_path(resource_path)[0]
             auth_id = None
-            res_path = resource_path
+
             grant_all_consent = check_program_for_allcon(resource_path, system_resource_dict, user_resource_dict)
             
+            """adds ALL consent level if the check returns true, but still adds all the others"""
             if grant_all_consent and program not in programs_granted_all_consent:
                 auth_id = program+ "_" + "ALL"
                 res_path = "/programs/" + program + "/projects/" + auth_id
@@ -187,21 +188,32 @@ def build_user_permissions(users_and_apps):
                 programs_granted_all_consent.add(program)
                 user_obj["projects"].append(project_obj)
 
-            elif program not in programs_granted_all_consent:
-                delim = "/projects/"
-                delimlen = len(delim)
-                slindex = resource_path.index(delim)
-                auth_id = resource_path[ slindex + delimlen:]
+            res_path = resource_path
+            delim = "/projects/"
+            delimlen = len(delim)
+            slindex = resource_path.index(delim)
+            auth_id = resource_path[ slindex + delimlen:]
 
-                project_obj = {
-                    "auth_id": auth_id,
-                    "privilege": [
-                        "read"
-                    ],
-                    "resource": res_path
+            project_obj = {
+                "auth_id": auth_id,
+                "privilege": [
+                    "read"
+                ],
+                "resource": res_path
+            }
+
+            user_obj["projects"].append(project_obj)
+
+            if not grant_all_consent:
+                files_project_obj = {
+                "auth_id": auth_id + "_files",
+                "privilege": [
+                    "read"
+                ],
+                "resource": res_path + "_files"
                 }
 
-                user_obj["projects"].append(project_obj)
+                user_obj["projects"].append(files_project_obj)
 
         template["users"][user_login] = user_obj
 
