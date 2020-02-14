@@ -217,11 +217,21 @@ def build_user_permissions(users_and_apps):
 
         template["users"][user_login] = user_obj
 
-def add_ALL_to_resource_tree():
-
+def add_ALL_and_Files_to_resource_tree():
     for program in template["rbac"]["resources"][0]["subresources"]: ##change to use real template once built
+        collected_projects = []
+        """adds ALL"""
         project_name = program["name"] + "_" + "ALL"
         program["subresources"][0]["subresources"].append( {"name": project_name } )
+        
+        """adds _files"""
+        for project in program["subresources"][0]["subresources"]:
+            collected_projects.append(project)
+        
+        for project in collected_projects:
+            if "ALL" not in project["name"]:
+                program["subresources"][0]["subresources"].append( {"name": project["name"] + "_files" } )
+
 
 """utility functions"""
 def write_to_file(filename, data):
@@ -370,6 +380,6 @@ if __name__ == "__main__":
 
     build_user_permissions(users_and_apps)
 
-    add_ALL_to_resource_tree()
+    add_ALL_and_Files_to_resource_tree()
 
     build_yaml(template)
