@@ -637,12 +637,19 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
         del fileAllConsents_array[:]
         del fileAllConsents_batch_ids[:]
 
+    def create_none_consent_file():
+        print('cncf')
+
     def create_non_sample_file():
         for file in files_list:
-            if file["consent"] and file["consent_key"].strip() == consent:
+            
+            if file["consent"] is None or file["consent"] and file["consent_key"].strip() == consent:
+                if file["consent"] is None:
+                    file_consent = "None"
                 ##file_type = ???? not in data (WGS WES etc.)... n/a for now
                 file_type = 'n/a'
                 file_format = file["type"]
+                file_consent = consent
                 file_id = file["id"]
                 file_name = file["name"]
                 file_submitter_id = file_name + "_" + file_format + "_" + str( file_id )
@@ -650,7 +657,7 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
                         # AW- currently missing data_type, ref_build, data_category(genotype, expression, etc.) because not in DSS data
                 aldf_obj = {
                     "*data_type": file["type"], 
-                    "*consent": consent, 
+                    "*consent": file_consent, 
                     "core_metadata_collections": {
                         "submitter_id": project_name + "_core_metadata_collection"
                     }, 
