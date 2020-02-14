@@ -289,7 +289,7 @@ def createProject(arr):
 
     # print('creating project, {} unique subject ids found').format(str(len(project_sample_set)))
 
-    if project_sample_set:
+    if project_sample_set or consent == "ALL":
         project_name = program_name+"_"+consent
         project_obj = {
             "type": "project",
@@ -326,26 +326,24 @@ def createProject(arr):
             }
         }
 
-        # print( "creating core_metadata_collection for " + project_name )
         submitter.submit_record(program_name, project_name, cmc_obj)
 
-        createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
+        if consent != "ALL":
+            createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
 
         ## node generation with multiprocessing
-        t1 = threading.Thread(target=createALDFs, args=(consent, filesNonSamples, project_name, program_name, "filesNonSamples"))
-        t2 = threading.Thread(target=createALDFs, args=(consent, filesAllConsents, project_name, program_name, "filesAllConsents"))
-        t3 = threading.Thread(target=createIDLFs, args=(consent, filesSamples, project_name, program_name))
+            t1 = threading.Thread(target=createALDFs, args=(consent, filesNonSamples, project_name, program_name, "filesNonSamples"))
+            t2 = threading.Thread(target=createIDLFs, args=(consent, filesSamples, project_name, program_name))
 
-        t1.start()
-        t2.start()
-        t3.start()
- 
-        t1.join()
-        t2.join()
-        t3.join()
+            t1.start()
+            t2.start()
+    
+            t1.join()
+            t2.join()
 
-
-        # createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
+        else:
+            createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
+     
         # createALDFs(consent, filesNonSamples, project_name, program_name, "filesNonSamples")
         # ildfs = createIDLFs(consent, filesSamples, project_name, program_name)
     

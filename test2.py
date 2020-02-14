@@ -83,7 +83,7 @@ def populate_datastage():
         
         consents = getConsents(dss_dataset_id)
         """puts ALL at beginning of consents list"""
-        # consents.insert(0, "ALL")
+        consents.insert(0, "ALL")
 
         dataFromFiles = openFiles()
 
