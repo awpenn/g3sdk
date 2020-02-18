@@ -294,6 +294,7 @@ def create_associated_files_project(program_name, sibling_project, consent, file
         "description": "Core Metadata Collection for "+files_project_name, 
         "type": "core_metadata_collection", 
         "submitter_id": files_project_name+"_"+"core_metadata_collection",
+        "project_id": program_name + "-" + files_project_name,
         "projects": {
             "id": fetched_project_id
         }
@@ -361,6 +362,7 @@ def createProject(arr):
             "description": "Core Metadata Collection for "+project_name, 
             "type": "core_metadata_collection", 
             "submitter_id": project_name+"_"+"core_metadata_collection",
+            "project_id": program_name + "-" + project_name,
             "projects": {
                 "id": fetched_project_id
             }
@@ -431,6 +433,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                     # print( "creating subject record " + subject["key"] )
                     subject_obj = {
                         "cohort": subject["cohort_key"], 
+                        "project_id": program_name + "-" + project_name,
                         "projects": {
                             "id": fetched_project_id
                         }, 
