@@ -10,7 +10,6 @@ import hashlib
 import calendar
 from datetime import datetime
 from time import sleep
-
 import threading
 from multiprocessing import Process
 
@@ -294,6 +293,7 @@ def create_associated_files_project(program_name, sibling_project, consent, file
         "description": "Core Metadata Collection for "+files_project_name, 
         "type": "core_metadata_collection", 
         "submitter_id": files_project_name+"_"+"core_metadata_collection",
+        "project_id": program_name + "-" + files_project_name,
         "projects": {
             "id": fetched_project_id
         }
@@ -361,6 +361,7 @@ def createProject(arr):
             "description": "Core Metadata Collection for "+project_name, 
             "type": "core_metadata_collection", 
             "submitter_id": project_name+"_"+"core_metadata_collection",
+            "project_id": program_name + "-" + project_name,
             "projects": {
                 "id": fetched_project_id
             }
@@ -371,12 +372,12 @@ def createProject(arr):
         if consent != "ALL":
             createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
 
-        ## node generation with multiprocessing
+        # node generation with multiprocessing
             
             create_associated_files_project(program_name, project_name, consent, filesNonSamples)
             createILDFs(consent, filesSamples, project_name, program_name)
 
-        else:
+        # else:
             createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
             createALDFs("null", filesNonSamples, project_name, program_name, "filesNonSamples")
 
@@ -431,6 +432,7 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                     # print( "creating subject record " + subject["key"] )
                     subject_obj = {
                         "cohort": subject["cohort_key"], 
+                        "project_id": program_name + "-" + project_name,
                         "projects": {
                             "id": fetched_project_id
                         }, 
@@ -456,7 +458,8 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                         "type": "sample", 
                         "submitter_id": sample["key"], 
                         "data_type": sample["assay"], 
-                        "sample_source": sample["source"], 
+                        "sample_source": sample["source"],
+                        "project_id": program_name + "-" + project_name, 
                         "subjects": {
                             "submitter_id": sample["subject"]["key"]
                         }
@@ -499,7 +502,8 @@ def createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes,
                         "type": "phenotype", 
                         "study_specific_diagnosis": current_subject_phenotypes_dict["Study_Specific_Diagnosis"], 
                         "disease": current_subject_phenotypes_dict["Disease"], 
-                        "submitter_id": current_subject_id + "_pheno", 
+                        "submitter_id": current_subject_id + "_pheno",
+                        "project_id": program_name + "-" + project_name,
                         "ethnicity": current_subject_phenotypes_dict["Ethnicity"]
                     }
 
@@ -590,7 +594,8 @@ def createILDFs(consent, filesSamples, project_name, program_name):
                 "*file_path": file["path"], 
                 "*data_format": file_format, 
                 "*file_name": file_name, 
-                "*md5sum": file_md5, 
+                "*md5sum": file_md5,
+                "project_id": program_name + "-" + project_name, 
                 "*file_size": file["size"], 
                 "*samples": {
                 "submitter_id": file["sample"]["key"]
@@ -665,6 +670,7 @@ def createALDFs(consent, files_list, project_name, program_name, filetype):
                     "*md5sum": file_md5, 
                     "*file_size": file["size"], 
                     "*submitter_id": file_submitter_id,
+                    "project_id": program_name + "-" + project_name,
                     "fileset": file["fileset"]["accession"],
                     "*file_name": file_name
                 }
