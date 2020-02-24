@@ -54,7 +54,7 @@ def phenotype_prettifier(rawInput):
     return " ".join(word_list)
 
 def partition(consents):
-    consents_per_chunk = 2
+    consents_per_chunk = 1
     for i in range(0, len(consents), consents_per_chunk):
         yield consents[i:i + consents_per_chunk]
 
@@ -115,8 +115,6 @@ def make_dir(project):
 
     if not os.path.exists(checkpath):
         path = os.path.join(PARENT_DIRECTORY, program_name)
-        print(checkpath)
-        print(path)
         os.mkdir(path)
 
     else:
