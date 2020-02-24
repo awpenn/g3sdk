@@ -1,4 +1,5 @@
 import gen3
+import os
 from gen3 import submission
 from gen3 import auth
 import json
@@ -18,6 +19,7 @@ from settings import APIURL, HEADERS
 Gen3Submission = submission.Gen3Submission
 endpoint = "https://gen3test.lisanwanglab.org"
 auth = auth.Gen3Auth(endpoint, refresh_file="credentials.json")
+PARENT_DIRECTORY = "/Users/andrewwilk/Desktop/g3sdk/tsv-outfiles"
 
 submitter = Gen3Submission(endpoint, auth)
  
@@ -101,6 +103,37 @@ def datasetReport(consents, program_name, filesAndPhenotypes, samplesAndSubjects
     print('{} all-consent files in this dataset').format(str(len(allConsentFiles)))
     print('{} phenotype datapoints in this dataset').format(str(len(phenotypes)))
 
+def make_dir(project):
+    """takes `project_id` name for project, eg NG00067_ADRD-IRB-PUB, splits string into program and project and creates the directories for them in test_tsvs"""
+    delim = project.index("_")
+    # project_name = project[delim + 1:]
+    program_name = project[:delim]
+    project_name = project
+
+    checkpath = '{}/{}'.format(PARENT_DIRECTORY, program_name)
+    # checkpath = PARENT_DIRECTORY + "/" + program_name
+
+    if not os.path.exists(checkpath):
+        path = os.path.join(PARENT_DIRECTORY, program_name)
+        print(checkpath)
+        print(path)
+        os.mkdir(path)
+
+    else:
+        print('Directory already exists for {}. Skipping...'.format(program_name))
+
+    checkpath = '{}/{}'.format(checkpath, project_name)
+    if not os.path.exists(checkpath):
+
+        path = os.path.join(PARENT_DIRECTORY + '/{}', project_name).format(program_name)
+
+        os.mkdir(path)
+    
+    else:
+        print('Directory already exists for {}. Skipping...'.format(project_name))
+
+
+    return program_name
 ##returns array of arrays: fileSamp, nonSamp, allCon, phenotypes
 def getFilesPhenotypes(dss_dataset_id): 
     filesSamples = getData(dss_dataset_id, "fileSamples")
@@ -274,7 +307,7 @@ def create_associated_files_project(program_name, sibling_project, consent, file
     }
 
     submitter.create_project(program_name, files_project_obj)
-    
+    make_dir(files_project_name)
     query = '{project(name:\"%s\"){id}}' % files_project_name
     # print(query)
     """with multiprocessing, sometimes projects dont get created correctly, so this tries to query for the id, if it doesn't work it tries to create project again"""
@@ -340,7 +373,7 @@ def createProject(arr):
         }
 
         submitter.create_project(program_name, project_obj)
-
+        make_dir(project_name)
         ## create CMC for each created project
 
         query = '{project(name:\"%s\"){id}}' % project_name
@@ -370,16 +403,16 @@ def createProject(arr):
         submitter.submit_record(program_name, project_name, cmc_obj)
 
         if consent != "ALL":
-            createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
+        #     createSubjectsAndSamples(project_sample_set, samplesAndSubjects, phenotypes, program_name, project_name, consent, fetched_project_id)
 
-        # node generation with multiprocessing
+        # # node generation with multiprocessing
             
             create_associated_files_project(program_name, project_name, consent, filesNonSamples)
-            createILDFs(consent, filesSamples, project_name, program_name)
+        #     createILDFs(consent, filesSamples, project_name, program_name)
 
-        # else:
-            createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
-            createALDFs("null", filesNonSamples, project_name, program_name, "filesNonSamples")
+        # # else:
+        #     createALDFs(consent, filesAllConsents, project_name, program_name, "filesAllConsents")
+        #     createALDFs("null", filesNonSamples, project_name, program_name, "filesNonSamples")
 
         # createALDFs(consent, filesNonSamples, project_name, program_name, "filesNonSamples")
         # ildfs = createILDFs(consent, filesSamples, project_name, program_name)
